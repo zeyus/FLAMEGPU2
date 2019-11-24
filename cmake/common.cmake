@@ -311,6 +311,27 @@ function(add_flamegpu_library NAME SRC FLAMEGPU_ROOT)
     target_include_directories(${NAME}  PRIVATE ${FLAMEGPU_ROOT}/include)
     target_include_directories(${NAME}  PRIVATE ${FLAMEGPU_ROOT}/src) #private headers
 
+    # Offer HDF5
+    SET(HDF5_USE_STATIC_LIBRARIES ON FORCE)
+    SET(HDF5_PREFER_PARALLEL ON FORCE)
+    # include(FINDHDF5)
+    if (UNIX)
+    
+    else() 
+        # Without this hint it finds useless anaconda dir
+        # Due to nested dir, we also have to specify the version dir
+        SET(HDF5_ROOT "C:/Program Files/HDF_Group/HDF5/1.10.5" CACHE PATH "Hint for where to find hdf5 installation dir")
+        # Could perhaps glob to detect the version and amend the variable
+    endif()
+    find_package(HDF5 COMPONENTS CXX HL)
+    if(HDF5_FOUND)
+        target_include_directories(${NAME} SYSTEM PRIVATE "${HDF5_INCLUDE_DIRS}")    
+        target_link_libraries(${NAME} "${HDF5_CXX_LIBRARIES}")
+        message("INCLUDE: " "${HDF5_INCLUDE_DIRS}")
+        message("lib: " "${HDF5_LIBRARIES}")
+        message("cxx lib: " "${HDF5_CXX_LIBRARIES}")
+    endif()
+
     # Flag the new linter target and the files to be linted.
     new_linter_target(${NAME} "${SRC}")
     
