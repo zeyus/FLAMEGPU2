@@ -18,6 +18,10 @@
 #include "flamegpu/sim/Simulation.h"
 #include "flamegpu/runtime/utility/RandomManager.cuh"
 
+#ifdef HDF5_ENABLED
+#include "H5Cpp.h"
+#endif  // HDF5_ENABLED
+
 // include FLAMEGPU kernel wrapper
 #include "flamegpu/runtime/agent_function.h"
 
@@ -304,6 +308,10 @@ bool CUDAAgentModel::step(const Simulation& simulation) {
     for (auto &stepFn : simulation.getStepFunctions())
         stepFn(&this->host_api);
 
+#ifdef HDF5_ENABLED
+    // Optional HDF5 export
+    exportStep_hdf5();
+#endif  // HDF5_ENABLED
 
     // Execute exit conditions
     for (auto &exitCdns : simulation.getExitConditions())
@@ -394,3 +402,77 @@ const CUDAMessage& CUDAAgentModel::getCUDAMessage(std::string message_name) cons
 
     return *(it->second);
 }
+#ifdef HDF5_ENABLED
+void CUDAAgentModel::setHDF5ExportFile(const std::string &dir) {
+    this->hdf5_export_location = dir;
+}
+/**
+ * Based on: https://support.hdfgroup.org/HDF5/doc/cpplus_RM/create_8cpp-example.html
+ */
+void CUDAAgentModel::exportStep_hdf5() const {
+    if (this->hdf5_export_location.empty())
+        return;
+    try {
+        /*
+        * Turn off the auto-printing when failure occurs so that we can
+        * handle the errors appropriately
+        */
+        H5::Exception::dontPrint();
+        /*
+        * Create a the export file if it doesn't exist
+        * Request read-write, othewise it defaults to read-only
+        */
+        H5::H5File file(this->hdf5_export_location.c_str(), H5F_ACC_CREAT | H5F_ACC_RDWR);
+
+        for (const auto &_agent : agent_map) {
+            const std::string &agent_name = _agent.first;
+            AgentPopulation pop = AgentPopulation(_agent.second->getAgentDescription());
+            _agent.second->getPopulationData(pop);
+
+            const std::string DATASET_NAME = _agent.second->getAgentDescription().getName();
+            hsize_t dims = _agent.second->getAgentDescription().getNumberAgentVariables();
+            H5::Group dataset;
+           // try {
+           //     dataset = file.openDataSet(DATASET_NAME.c_str());  // file.createDataSet(DATASET_NAME, datatype, dataspace);
+           // } catch (H5::DataSetIException error) {
+                // Dataset for agent doesn't already exist
+                dataset = file.createGroup(agent_name.c_str());  // DATASET_NAME.c_str()
+                hsize_t agentCt = pop.getCurrentListSize("default");
+                for (const auto &var : _agent.second->getAgentDescription().getMemoryMap()) {
+                    H5::DataSpace default_space = H5::DataSpace(1, &agentCt);
+                    H5::DataType &&type = H5::DataType();
+                    if (var.second == typeid(float)) {
+                        type = H5::FloatType(H5::PredType::NATIVE_FLOAT);
+                    } else if (var.second == typeid(float)) {
+                        type = H5::FloatType(H5::PredType::NATIVE_DOUBLE);
+                    } else if (var.second == typeid(int)) {
+                        type = H5::IntType(H5::PredType::NATIVE_INT32);
+                    } else if (var.second == typeid(unsigned int)) {
+                        type = H5::IntType(H5::PredType::NATIVE_UINT32);
+                    } else {
+                        throw std::runtime_error("unsupported type");
+                    }
+                    H5::Attribute attr = dataset.createAttribute(var.first.c_str(), type, default_space);
+                    attr.write(type, pop.getStateMemory().getReadOnlyMemoryVector(var.first).getReadOnlyDataPtr());
+                }
+                file.close();
+            //}
+            printf("fin");
+            // Need to define a dataset per agent
+            // Attribute per agent-variable
+        }
+    } catch (H5::FileIException error) {
+        // catch failure caused by the H5File operations
+        error.printErrorStack();
+    } catch (H5::DataSetIException error) {
+        // catch failure caused by the DataSet operations
+        error.printErrorStack();
+    } catch (H5::DataSpaceIException error) {
+        // catch failure caused by the DataSpace operations
+        error.printErrorStack();
+    } catch (H5::DataTypeIException error) {
+        // catch failure caused by the DataSpace operations
+        error.printErrorStack();
+    }
+}
+#endif  // HDF5_ENABLED

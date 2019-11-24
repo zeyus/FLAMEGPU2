@@ -239,6 +239,21 @@ else()
     endif()
 endif()
 
+
+# Offer HDF5
+SET(HDF5_USE_STATIC_LIBRARIES OFF FORCE)
+SET(HDF5_PREFER_PARALLEL ON FORCE)
+# include(FINDHDF5)
+if (UNIX)
+
+else() 
+    # Without this hint it finds useless anaconda dir
+    # Due to nested dir, we also have to specify the version dir
+    SET(HDF5_ROOT "C:/Program Files/HDF_Group/HDF5/1.10.5" CACHE PATH "Hint for where to find hdf5 installation dir")
+    # Could perhaps glob to detect the version and amend the variable
+endif()
+find_package(HDF5 COMPONENTS CXX HL)
+
 # Function to mask some of the steps to create an executable which links against the static library
 function(add_flamegpu_executable NAME SRC FLAMEGPU_ROOT PROJECT_ROOT IS_EXAMPLE)
 
@@ -256,6 +271,10 @@ function(add_flamegpu_executable NAME SRC FLAMEGPU_ROOT PROJECT_ROOT IS_EXAMPLE)
     target_include_directories(${NAME}  SYSTEM PRIVATE "${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}/../include")    
     target_include_directories(${NAME} PRIVATE ${FLAMEGPU_ROOT}/include)
 
+    if(HDF5_FOUND)
+        add_compile_definitions(HDF5_ENABLED H5_BUILT_AS_DYNAMIC_LIB)
+    endif()
+    
     # Enable RDC for the target
     set_property(TARGET ${NAME} PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 
@@ -310,27 +329,17 @@ function(add_flamegpu_library NAME SRC FLAMEGPU_ROOT)
     target_include_directories(${NAME}  SYSTEM PRIVATE "${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}/../include")
     target_include_directories(${NAME}  PRIVATE ${FLAMEGPU_ROOT}/include)
     target_include_directories(${NAME}  PRIVATE ${FLAMEGPU_ROOT}/src) #private headers
-
-    # Offer HDF5
-    SET(HDF5_USE_STATIC_LIBRARIES ON FORCE)
-    SET(HDF5_PREFER_PARALLEL ON FORCE)
-    # include(FINDHDF5)
-    if (UNIX)
     
-    else() 
-        # Without this hint it finds useless anaconda dir
-        # Due to nested dir, we also have to specify the version dir
-        SET(HDF5_ROOT "C:/Program Files/HDF_Group/HDF5/1.10.5" CACHE PATH "Hint for where to find hdf5 installation dir")
-        # Could perhaps glob to detect the version and amend the variable
-    endif()
-    find_package(HDF5 COMPONENTS CXX HL)
-    if(HDF5_FOUND)
-        target_include_directories(${NAME} SYSTEM PRIVATE "${HDF5_INCLUDE_DIRS}")    
-        target_link_libraries(${NAME} "${HDF5_CXX_LIBRARIES}")
-        message("INCLUDE: " "${HDF5_INCLUDE_DIRS}")
-        message("lib: " "${HDF5_LIBRARIES}")
-        message("cxx lib: " "${HDF5_CXX_LIBRARIES}")
-    endif()
+  if(HDF5_FOUND)
+      # H5_BUILT_AS_DYNAMIC_LIB macro is required to link against dynamic libs
+      add_compile_definitions(HDF5_ENABLED H5_BUILT_AS_DYNAMIC_LIB)
+      target_include_directories(${NAME} SYSTEM PRIVATE "${HDF5_INCLUDE_DIRS}")    
+      # Find hdf5 only finds the main libs, and not szip, zlib, so this lazy method works whilst only testing on windows
+      target_link_directories(${NAME} PUBLIC "${HDF5_INCLUDE_DIRS}/../lib") # Temp, because deps are trying to link with libs
+      # Passing private is not supposed to link with deps, but it does??
+      target_link_libraries(${NAME} PRIVATE "szip.lib;zlib.lib;hdf5.lib;hdf5_cpp.lib") # ;hdf5_tools.lib
+      message("target name: " "${NAME}")
+  endif()
 
     # Flag the new linter target and the files to be linted.
     new_linter_target(${NAME} "${SRC}")

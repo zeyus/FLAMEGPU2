@@ -56,6 +56,10 @@ class CUDAAgentModel {
 
     const ModelDescription& getModelDescription() const { return model_description; }
 
+#ifdef HDF5_ENABLED
+    void setHDF5ExportFile(const std::string &dir);
+#endif  // HDF5_ENABLED
+
  private:
     const ModelDescription& model_description;
     CUDAAgentMap agent_map;
@@ -70,6 +74,10 @@ class CUDAAgentModel {
      * Resizes device random array during step()
      */
     RandomManager &rng;
+#ifdef HDF5_ENABLED
+    void exportStep_hdf5() const;
+    std::string hdf5_export_location;
+#endif  // HDF5_ENABLED
 };
 
 #endif  // INCLUDE_FLAMEGPU_GPU_CUDAAGENTMODEL_H_

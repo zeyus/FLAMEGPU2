@@ -182,6 +182,10 @@ int main(void) {
     /* Run the model */
     CUDAAgentModel cuda_model(flame_model);
 
+#ifdef HDF5_ENABLED
+    cuda_model.setHDF5ExportFile("hdf5_out.h5");
+#endif
+
     cuda_model.setInitialPopulationData(population);
 
     cuda_model.simulate(simulation);
