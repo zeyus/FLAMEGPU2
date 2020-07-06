@@ -80,9 +80,6 @@ def ExceptionPropertyType_test(type1: str, type2: str):
     set_func_t1 = getattr(ed, f"set{type1}")
     set_func_t2 = getattr(ed, f"set{type2}")
     set_func_array_t2 = getattr(ed, f"set{type2}Array{ARRAY_TEST_LEN}")
-    
-    remove_func_t1 = getattr(ed, f"remove{type1}")
-    remove_func_t2 = getattr(ed, f"remove{type2}")
   
     a_t1 = 1
     a_t2 = 1
@@ -103,16 +100,6 @@ def ExceptionPropertyType_test(type1: str, type2: str):
     with pytest.raises(pyflamegpu.FGPURuntimeException) as e:
         set_func_t2("b", 0, a_t2)
     assert e.value.type() == "InvalidEnvPropertyType"
-
-    with pytest.raises(pyflamegpu.FGPURuntimeException) as e:
-        remove_func_t2("a")
-    assert e.value.type() == "InvalidEnvPropertyType"
-    with pytest.raises(pyflamegpu.FGPURuntimeException) as e:
-        remove_func_t2("b")
-    assert e.value.type() == "InvalidEnvPropertyType"
-
-    remove_func_t1("a")
-    remove_func_t1("b")
         
 
 def ExceptionPropertyLength_test(type: str):
@@ -363,30 +350,19 @@ class EnvironmentDescriptionTest(TestCase):
         assert e.value.type() == "InvalidEnvProperty"
         ed.addFloat("a", a)
         assert ed.getFloat("a") == a
-        ed.removeFloat("a")
-        with pytest.raises(pyflamegpu.FGPURuntimeException) as e:
-            ed.getFloat("a")
-        assert e.value.type() == "InvalidEnvProperty"
-        with pytest.raises(pyflamegpu.FGPURuntimeException) as e:
-            ed.removeFloat("a")
-        assert e.value.type() == "InvalidEnvProperty"
         # array version (get array functions dynamically to avoid hard coded ARRAY_TEST_LEN)
         add_int_array_func = getattr(ed, f"addIntArray{ARRAY_TEST_LEN}")
         get_int_array_func = getattr(ed, f"getIntArray{ARRAY_TEST_LEN}")
         get_float_array_func = getattr(ed, f"getFloatArray{ARRAY_TEST_LEN}")
         b = [0] * ARRAY_TEST_LEN
-        add_int_array_func("a", b, False)
-        get_int_array_func("a")
-        ed.getInt("a", 1)
-        ed.removeInt("a")
+        add_int_array_func("b", b, False)
+        get_int_array_func("b")
+        ed.getInt("b", 1)
         with pytest.raises(pyflamegpu.FGPURuntimeException) as e:
-            get_float_array_func("a")
+            get_float_array_func("c")
         assert e.value.type() == "InvalidEnvProperty"
         with pytest.raises(pyflamegpu.FGPURuntimeException) as e:
-            ed.getFloat("a", 1)
-        assert e.value.type() == "InvalidEnvProperty"
-        with pytest.raises(pyflamegpu.FGPURuntimeException) as e:
-            ed.removeFloat("a")
+            ed.getFloat("c", 1)
         assert e.value.type() == "InvalidEnvProperty"
 
     def test_reserved_name(self):
@@ -396,9 +372,6 @@ class EnvironmentDescriptionTest(TestCase):
         assert e.value.type() == "ReservedName"
         with pytest.raises(pyflamegpu.FGPURuntimeException) as e:
             ed.setInt("_", 1)
-        assert e.value.type() == "ReservedName"
-        with pytest.raises(pyflamegpu.FGPURuntimeException) as e:
-            ed.setConst("_", True)
         assert e.value.type() == "ReservedName"
         # Array version
         with pytest.raises(pyflamegpu.FGPURuntimeException) as e:

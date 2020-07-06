@@ -20,7 +20,7 @@
  */
 
 #define AGENT_COUNT 32
-#define EXPECT_EQ(x, y) if (x != y) printf("%d not equal to %d", x, y)
+#define EXPECT_EQ(x, y) if (x != y) printf("%d not equal to %d", static_cast<int>(x), static_cast<int>(y))
 
 
 const char* rtc_func = R"###(
@@ -36,7 +36,6 @@ FLAMEGPU_AGENT_FUNCTION(MandatoryOutput, MsgNone, MsgNone) {
  * Test an RTC function to an agent function condition (where the condition is not compiled using RTC)
  */
 int main() {
-
     // Define model
     ModelDescription model("Spatial3DMsgTestModel");
     AgentDescription &agent = model.newAgent("agent");
