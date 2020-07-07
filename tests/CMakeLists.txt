@@ -30,6 +30,15 @@ if(NOT googletest_POPULATED)
     add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
+# Add a custom target all_tests, which builds the dependencies for all tests.
+
+# This doesn't actualyl do anything? its virtual? Maybe it needs some kind of side effect listing?
+add_custom_target(all_tests
+    ALL
+    # COMMAND echo "all_tests"
+    VERBATIM
+)
+
 # Name the project and set languages
 project(tests CUDA CXX)
 
@@ -135,9 +144,14 @@ CMAKE_SET_TARGET_FOLDER("gtest" "Tests/Dependencies")
 set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"  PROPERTY VS_STARTUP_PROJECT "${PROJECT_NAME}")
 
 # Set the default (visual studio) debugger configure_file
-set_target_properties("${PROJECT_NAME}" PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-                                                   VS_DEBUGGER_COMMAND_ARGUMENTS "$<$<CONFIG:Debug>:--gtest_catch_exceptions=0>")
+set_target_properties("${PROJECT_NAME}" 
+    PROPERTIES 
+        VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        VS_DEBUGGER_COMMAND_ARGUMENTS "$<$<CONFIG:Debug>:--gtest_catch_exceptions=0>"
+)
 
+# Add the dependency on the all_tests custom target
+add_dependencies(all_tests tests)
 
 # Add the tests
 if(USE_GTEST_DISCOVER)
@@ -181,8 +195,14 @@ if(TEST_DEV_MODE)
     CMAKE_SET_TARGET_FOLDER("${PROJECT_NAME}" "Tests")
     
     # Set the default (visual studio) debugger configure_file
-    set_target_properties("${PROJECT_NAME}" PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-                                                       VS_DEBUGGER_COMMAND_ARGUMENTS "$<$<CONFIG:Debug>:--gtest_catch_exceptions=0>")
+    set_target_properties("${PROJECT_NAME}" 
+        PROPERTIES 
+            VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            VS_DEBUGGER_COMMAND_ARGUMENTS "$<$<CONFIG:Debug>:--gtest_catch_exceptions=0>"
+    )
+
+    # Add the dependency on the all_tests custom target
+    add_dependencies(all_tests tests_dev)
 
     # Add the tests
     if(USE_GTEST_DISCOVER)
@@ -201,3 +221,6 @@ if(TEST_DEV_MODE)
         )
     endif()
 endif()
+
+
+# @todo - python tests should be deifned here? / in a subdirectory, but that requires stuff from teh swig build (venv). Maybe can check the target?

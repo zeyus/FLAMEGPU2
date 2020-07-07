@@ -126,37 +126,148 @@ add_custom_command(TARGET ${PYTHON_MODULE_NAME} POST_BUILD
 	WORKING_DIRECTORY ${PYTHON_LIB_OUTPUT_DIRECTORY}
 )
 
-# Build Virtual Environment for python testing and install the packaged wheel
-if(BUILD_SWIG_PYTHON_VIRTUALENV)
-	# Look for python module virtualenv
-	search_python_module(venv)
-	# Testing using a virtual environment
-	set(VENV_EXECUTABLE ${Python3_EXECUTABLE} -m venv)
-	set(VENV_DIR ${PYTHON_LIB_OUTPUT_DIRECTORY}/venv)
-	if(WIN32)
-		set(VENV_PIP "${VENV_DIR}\\Scripts\\pip.exe")
-	else()
-		set(VENV_PIP ${VENV_DIR}/bin/pip)
-	endif()
-	# make a virtualenv to install our python package in it
-	add_custom_command(TARGET ${PYTHON_MODULE_NAME} POST_BUILD
-		# create venv
-		COMMAND ${VENV_EXECUTABLE} ${VENV_DIR}
 
-		# Must not call it in a folder containing the setup.py otherwise pip call it
-		# (i.e. "python setup.py bdist") while we want to consume the wheel package
-		COMMAND ${VENV_PIP} install --force-reinstall --find-links=dist --no-index -U ${PYTHON_MODULE_NAME}
-		# install pytest
-		COMMAND ${VENV_PIP} install pytest
-		BYPRODUCTS ${VENV_DIR}
-		# TODO: Add dependancy to ensure this post build step occurs after the previous post build step which builds the wheel
-		WORKING_DIRECTORY ${PYTHON_LIB_OUTPUT_DIRECTORY})
-	# TODO: Add tests (not supported by VS generator in CMAKE)
-	#add_test(...)
+# CTEST todolist.:
+# + Activate the venv instead of cheesing it byinvoking specific executables.
+# + Add dependencies/fixtures to make sure tests are built before executed.
+# + Windows.
+# + byproducts for make clean?
+# + Structure of cmakefiles / file strucutres. add_tests should not be in here really...
+# + Add individual python tests if relevant flag is passed.
+# + test lables
+# + Split unit tests and rtc tests? 
+# + Rename tests target to flamegpu2_tests?
+# + Move tests/ to tests/flamegpu/
+# + see how this works with VS.
+
+message("@todo - Should really be activating the venv rather than cheesing it with executables... but need to figure out how that works with the shell...")
+
+# Always build the virtual env / make it required rather than it being behind an implied option.
+# Build Virtual Environment for python testing and install the packaged wheel
+# Look for python module virtualenv
+search_python_module(venv)
+# Testing using a virtual environment
+set(VENV_EXECUTABLE ${Python3_EXECUTABLE} -m venv)
+set(VENV_DIR ${PYTHON_LIB_OUTPUT_DIRECTORY}/venv)
+# Can't use find file, as it doesn't exist yet, so predict the location of python. This seems a little fragile...
+# @todo - generate the venv at configure time, and install pytest at configure time, then install pyflamegpu at build time. 
+if(NOT WIN32)
+	set(VENV_PYTHON3_EXECUTABLE "${VENV_DIR}/bin/python")
+	# This is a little fragile, but can't use find_file as it doesn't exist yet.
+	set(VENV_SITE_PACKAGES "${VENV_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages/")
+	seT(VENV_SITE_PACKAGES_PYTEST "${VENV_SITE_PACKAGES}/pytest")
+	seT(VENV_SITE_PACKAGES_PYFLAMEGPU "${VENV_SITE_PACKAGES}/${PYTHON_MODULE_NAME}")
+else()
+	set(VENV_PYTHON3_EXECUTABLE "${VENV_DIR}/Scripts/python.exe")
+	message(FATAL_ERROR "Need to set VENV_PYTEST_FILE on windows")
 endif()
+
+message("VENV_EXECUTABLE ${VENV_EXECUTABLE}")
+message("VENV_DIR ${VENV_DIR}")
+message("VENV_PYTHON3_EXECUTABLE ${VENV_PYTHON3_EXECUTABLE}")
+
+
+# @todo byproducts so make clean works? 
+# Add a custom command to create the virtual environment and install pyflamegpu into it (and pytest?)
+add_custom_command(OUTPUT ${VENV_DIR}
+	COMMAND ${VENV_EXECUTABLE} ${VENV_DIR}
+	COMMENT "Creating python venv ${VENV_DIR}"
+	WORKING_DIRECTORY ${PYTHON_LIB_OUTPUT_DIRECTORY}
+)
+
+# Add a custom command to install pyflamegpu into the venv, appending the command?
+add_custom_command(OUTPUT ${VENV_SITE_PACKAGES_PYFLAMEGPU} 
+	COMMAND ${VENV_PYTHON3_EXECUTABLE} -m pip install --force-reinstall --find-links=dist --no-index -U ${PYTHON_MODULE_NAME}
+	DEPENDS pyflamegpu
+	COMMENT "Installing pyflamegpu into the venv"
+	WORKING_DIRECTORY ${PYTHON_LIB_OUTPUT_DIRECTORY}
+)
+
+if(BUILD_TESTS)
+# Add a custom command to install pytest, if required.
+	add_custom_command(OUTPUT ${VENV_SITE_PACKAGES_PYTEST} 
+		COMMAND ${VENV_PYTHON3_EXECUTABLE} -m pip install pytest
+		COMMENT "Installing pytest into the venv"
+		WORKING_DIRECTORY ${PYTHON_LIB_OUTPUT_DIRECTORY}
+	)
+endif()
+
+
+if(BUILD_TESTS)
+	# Add a custom target pyflamegpu_venv which depends on pyflamegpu and the venv?
+	add_custom_target(pyflamegpu_venv ALL
+		DEPENDS ${VENV_DIR} ${VENV_SITE_PACKAGES_PYFLAMEGPU} ${VENV_SITE_PACKAGES_PYTEST}
+	)
+
+else()
+	# Custom target that doesn't depend on pytest?
+	add_custom_target(pyflamegpu_venv ALL
+		DEPENDS ${VENV_DIR} ${VENV_SITE_PACKAGES_PYFLAMEGPU}
+	)
+
+endif()
+
+# @todo - this doesn't work because files != target in this case? Don't really want to wrap again, hence double declaraiton above. Might be better to make a list of dependencies upfront then make the target...
+
+# if(BUILD_TESTS)
+# 	add_dependencies(pyflamegpu_venv ${VENV_SITE_PACKAGES_PYTEST})
+# endif()
+
+# The venv target depends on the pacakge.
+# add_dependencies(pyflamegpu_venv pyflamegpu)
+
+
+
 
 # set project folders (for better organisation in visual studio)
 if (CMAKE_USE_FOLDERS)
   set_property(GLOBAL PROPERTY USE_FOLDERS ON)
   set_property(TARGET "${PYTHON_MODULE_NAME}" PROPERTY FOLDER "FLAMEGPU")
 endif ()
+
+
+
+
+
+################
+# Python Tests #
+################
+# @todo - better structure for this. Most likley tests/swig/python/CMakeLists.txt and tests/flamegpu/CMakeLists.txt or similar (and the appropraite separation)
+
+# If python swig is enabeld, and tests, add pytests to ctest
+
+if(BUILD_SWIG_PYTHON)
+	message("Add python ctest.")
+	# @todo - make this better.
+	get_filename_component(SWIG_TESTS_SOURCE_DIR  "${CMAKE_CURRENT_SOURCE_DIR}/../../tests/swig/python" REALPATH)
+	# set(SWIG_TESTS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../tests/swig/python")
+	message("SWIG_TESTS_SOURCE_DIR ${SWIG_TESTS_SOURCE_DIR}")
+	message("VENV_PYTHON3_EXECUTABLE ${VENV_PYTHON3_EXECUTABLE}")
+
+    # Add the dependency for all_tests?
+    add_dependencies(all_tests pyflamegpu_venv)
+
+    # @todo make ctest depend on the venv somehow?
+
+    if(USE_GTEST_DISCOVER)
+        # Pytest doesn't use gtest discover, but we can map it to individual tests
+		message(FATAL_ERROR "@todo - somehow find individual pytests? or atleast per file basis.")
+		# @todo pytest --collect-only lists all the test
+		# pytest --collect-only -k "test_agent_death_array"
+		# This would need pytest at cmake configure time.
+		# And a list of python files within cmake, not globbed incase new files are added as they wouldn't be detected.
+		# Each discovered test would then need adding via add_test with an appropraite name, matching how gtest_discover works.
+
+
+    else()
+        # Otherwise just add the full python test suite as a single pytest invocation.
+        # Do not use an absolute path to the python interpreter, as this will not be the one in the venv (venv doesn't exist at cmake configuration time)
+        add_test(
+            NAME python
+            COMMAND ${VENV_PYTHON3_EXECUTABLE} -m pytest 
+            WORKING_DIRECTORY ${SWIG_TESTS_SOURCE_DIR}
+        )
+    endif()
+
+
+endif()
