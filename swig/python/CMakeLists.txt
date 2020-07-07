@@ -1,6 +1,10 @@
 # Include common rules.
 # Actually dont as the c Warning levels are too damn high
 #include(../../cmake/common.cmake)
+# Just include cuda_arch to suppress CMAKE 3.18 warnings on windows (where nvcc is used even when not neccesary)
+get_filename_component(FLAMEGPU_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../../ REALPATH)
+include(${FLAMEGPU_ROOT}/cmake/cuda_arch.cmake)
+
 STRING(TOLOWER "${CMAKE_SYSTEM_NAME}" CMAKE_SYSTEM_NAME_LOWER)
 
 # Python module name (must match module name in swig input *.i file)
@@ -47,7 +51,6 @@ endif()
 target_include_directories(${PYTHON_MODULE_NAME}
   PRIVATE
   ../../include
-  ../../externals
   ${Python3_INCLUDE_DIRS}
   )
   
