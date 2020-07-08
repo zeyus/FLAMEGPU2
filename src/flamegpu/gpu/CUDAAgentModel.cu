@@ -624,8 +624,20 @@ bool CUDAAgentModel::step() {
             incrementStepCounter();
             return false;
         }
+    // Execute exit condition callbacks
+    for (auto &exitCdns : model->exitConditionCallbacks)
+        if (exitCdns->run(this->host_api.get()) == EXIT) {
+#ifdef VISUALISATION
+            if (visualisation) {
+                visualisation->updateBuffers(step_count+1);
+            }
+#endif
+            // If there were any exit conditions, we also need to update the step count
+            incrementStepCounter();
+            return false;
+        }
     // If we have exit conditions functions, we might have host agent creation
-    if (model->exitConditions.size())
+    if (model->exitConditions.size() || model->exitConditionCallbacks.size())
         processHostAgentCreation(0);
 
 #ifdef VISUALISATION

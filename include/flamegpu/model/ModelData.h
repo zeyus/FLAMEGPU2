@@ -14,6 +14,7 @@
 
 
 class HostFunctionCallback;
+class HostFunctionConditionCallback;
 class EnvironmentDescription;
 struct AgentData;
 struct LayerData;
@@ -73,6 +74,11 @@ struct ModelData : std::enable_shared_from_this<ModelData>{
      */
     typedef std::set<HostFunctionCallback*> HostFunctionCallbackSet;
     /**
+     * Set of host condition callback pointers
+     * set<HostFunctionConditionCallback>
+     */
+    typedef std::set<HostFunctionConditionCallback*> HostFunctionConditionCallbackSet;
+    /**
      * Set of Exit function pointers
      * set<FLAMEGPU_EXIT_FUNCTION_POINTER>
      */
@@ -118,6 +124,7 @@ struct ModelData : std::enable_shared_from_this<ModelData>{
      * Holds pointers to all of the exit conditions used by the model
      */
     ExitConditionSet exitConditions;
+    HostFunctionConditionCallbackSet exitConditionCallbacks;
     /**
      * Holds all of the model's environment property definitions
      */

@@ -220,6 +220,14 @@ class ModelDescription {
      * @throws InvalidHostFunc If the exit condition has already been added to this model description
      */
     void addExitCondition(FLAMEGPU_EXIT_CONDITION_POINTER func_p);
+    /**
+     * Adds an exit condition callback to the simulation
+     * Exit conditions execute once per step, after all layers and step functions have been executed
+     * If the condition returns false, the simulation exits early
+     * @param func_callback Pointer to the desired exit condition callback
+     * @throws InvalidHostFunc If the exit condition has already been added to this model description
+     */
+    void addExitConditionCallback(HostFunctionConditionCallback *func_callback);
 
     /**
      * @return The model's name

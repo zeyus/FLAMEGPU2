@@ -268,7 +268,11 @@ TEMPLATE_ARRAY_TYPE_INSTANTIATE(Double, double)
  * To prevent raw pointer functions being exposed in Python these are ignored so only the callback versions are accessible.
  */
 %feature("director") HostFunctionCallback;
+%feature("director") HostFunctionConditionCallback;
 %include "flamegpu/runtime/HostFunctionCallback.h"
+/* Rather than input a header with lots of other function pointer stuff just inline dclare the required enum */
+enum FLAME_GPU_CONDITION_RESULT { CONTINUE, EXIT };
+
 
 // Disable non RTC function and function condtion set methods
 %ignore AgentDescription::newFunction;
@@ -280,6 +284,7 @@ TEMPLATE_ARRAY_TYPE_INSTANTIATE(Double, double)
 %ignore ModelDescription::addInitFunction;
 %ignore ModelDescription::addStepFunction;
 %ignore ModelDescription::addExitFunction;
+%ignore ModelDescription::addExitCondition;
 %ignore LayerDescription::addHostFunction;
 
 /* Define ModelData and EnvironmentManager size type (as both are internal to the classes which are not a generated swig object) */
@@ -392,6 +397,12 @@ TEMPLATE_VARIABLE_INSTANTIATE(get, HostEnvironment::get)
 TEMPLATE_VARIABLE_INSTANTIATE_N(get, HostEnvironment::getArray)
 TEMPLATE_VARIABLE_INSTANTIATE(set, HostEnvironment::set)
 TEMPLATE_VARIABLE_INSTANTIATE_N(set, HostEnvironment::set)
+
+/* Instanciate template versions of host agent functions from the API */
+TEMPLATE_VARIABLE_INSTANTIATE(getVariable, FLAMEGPU_HOST_NEW_AGENT_API::getVariable)
+TEMPLATE_VARIABLE_INSTANTIATE_N(getVariable, FLAMEGPU_HOST_NEW_AGENT_API::getVariable)
+TEMPLATE_VARIABLE_INSTANTIATE(setVariable, FLAMEGPU_HOST_NEW_AGENT_API::setVariable)
+TEMPLATE_VARIABLE_INSTANTIATE_N(setVariable, FLAMEGPU_HOST_NEW_AGENT_API::setVariable)
 
 /* Instanciate template versions of environment description functions from the API */
 TEMPLATE_VARIABLE_INSTANTIATE(add, EnvironmentDescription::add)

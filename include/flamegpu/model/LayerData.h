@@ -11,6 +11,7 @@
 struct AgentFunctionData;
 class LayerDescription;
 class HostFunctionCallback;
+class HostFunctionConditionCallback;
 
 /**
  * This is the internal data store for LayerDescription

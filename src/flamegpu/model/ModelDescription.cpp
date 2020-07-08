@@ -74,8 +74,8 @@ SubModelDescription& ModelDescription::newSubModel(const std::string &submodel_n
     }
     // Submodel name is not in use
     if (!hasSubModel(submodel_name)) {
-        if (submodel_description.model->exitConditions.empty()) {
-            THROW InvalidSubModel("Model '%s' does not contain any exit conditions, SubModels must exit of their own accord, "
+        if (submodel_description.model->exitConditions.empty() && submodel_description.model->exitConditionCallbacks.empty()) {
+            THROW InvalidSubModel("Model '%s' does not contain any exit conditions or exit condition callbacks, SubModels must exit of their own accord, "
                 "in ModelDescription::newSubModel().",
                 submodel_name.c_str());
         }
@@ -181,6 +181,13 @@ void ModelDescription::addExitCondition(FLAMEGPU_EXIT_CONDITION_POINTER func_p) 
         THROW InvalidHostFunc("Attempted to add same exit condition twice,"
             "in ModelDescription::addExitCondition()");
     }
+}
+
+void ModelDescription::addExitConditionCallback(HostFunctionConditionCallback *func_callback) {
+    if (!model->exitConditionCallbacks.insert(func_callback).second) {
+            THROW InvalidHostFunc("Attempted to add same exit condition callback twice,"
+                "in ModelDescription::addExitConditionCallback()");
+        }
 }
 
 /**
