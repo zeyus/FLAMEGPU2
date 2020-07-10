@@ -202,7 +202,7 @@ class FGPURuntimeException : public std::exception {
         SWIG_Python_Raise(err, except.type(), SWIGTYPE_p_FGPURuntimeException); 
         SWIG_fail;
     }
-    catch (Swig::DirectorException &e) { 
+    catch (Swig::DirectorException&) { 
         SWIG_fail; 
     }
     catch(const std::exception& e) {
@@ -401,6 +401,10 @@ TEMPLATE_VARIABLE_INSTANTIATE(setVariable, AgentInstance::setVariable)
 TEMPLATE_VARIABLE_INSTANTIATE_N(setVariable, AgentInstance::setVariable)
 TEMPLATE_VARIABLE_INSTANTIATE(getVariable, AgentInstance::getVariable)
 TEMPLATE_VARIABLE_INSTANTIATE_N(getVariable, AgentInstance::getVariableArray)
+
+/* Instanciate template versions of host agent instance functions from the API */
+TEMPLATE_VARIABLE_INSTANTIATE(sort, HostAgentInstance::sort)
+
 
 /* Instanciate template versions of host environment functions from the API */
 TEMPLATE_VARIABLE_INSTANTIATE(get, HostEnvironment::get)
