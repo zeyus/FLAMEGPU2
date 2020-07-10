@@ -184,6 +184,14 @@ class FGPURuntimeException : public std::exception {
 %}
 // Exception handling
 %include "exception.i"
+
+// swig director exceptions (handle python callback exceptions as C++ exceptions not Runtime errors)
+%feature("director:except") {
+  if ($error != NULL) {
+    throw Swig::DirectorMethodException();
+  }
+}
+
 %exception {
     try {
         $action
@@ -194,8 +202,10 @@ class FGPURuntimeException : public std::exception {
         SWIG_Python_Raise(err, except.type(), SWIGTYPE_p_FGPURuntimeException); 
         SWIG_fail;
     }
-    catch(const std::exception& e)
-    {
+    catch (Swig::DirectorException &e) { 
+        SWIG_fail; 
+    }
+    catch(const std::exception& e) {
         SWIG_exception(SWIG_RuntimeError, const_cast<char*>(e.what()) );
     }
     catch (...) {
