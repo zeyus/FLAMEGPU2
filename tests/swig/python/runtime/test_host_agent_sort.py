@@ -5,6 +5,7 @@ import random as rand
 
 """
 Dual agent variable sorting is not exposed in pyflamegpu and as such the tests have been removed
+Note: Casting random floats to in in python causes an off by one error
 """
 
 AGENT_COUNT = 1024
@@ -44,7 +45,7 @@ class HostAgentSort(TestCase):
         model = pyflamegpu.ModelDescription("model")
         agent = model.newAgent("agent")
         agent.newVariableFloat("float")
-        agent.newVariableInt("spare")
+        agent.newVariableFloat("spare")
         func = sort_ascending_float()
         model.newLayer().addHostFunctionCallback(func)
         rand.seed(a=31313131)
@@ -54,7 +55,7 @@ class HostAgentSort(TestCase):
             instance = pop.getNextInstance()
             t = rand.uniform(1, 1000000)
             instance.setVariableFloat("float", t)
-            instance.setVariableInt("spare", int(t)+12)
+            instance.setVariableFloat("spare", t+12.0)
         
         # Setup Model
         cuda_model = pyflamegpu.CUDAAgentModel(model)
@@ -68,32 +69,31 @@ class HostAgentSort(TestCase):
         for i in range(AGENT_COUNT): 
             instance = pop.getInstanceAt(i)
             f = instance.getVariableFloat("float")
-            s = instance.getVariableInt("spare")
+            s = instance.getVariableFloat("spare")
             # Agent variables are still aligned
-            assert int(f)+12 == s
+            assert f+12.0 == s
             # Agent variables are ordered
             assert f >= prev
             # Store prev
             prev = f
         
-"""
-    def test_Descending_float(self): 
+    def test_descending_float(self): 
         # Define model
         model = pyflamegpu.ModelDescription("model")
         agent = model.newAgent("agent")
         agent.newVariableFloat("float")
-        agent.newVariableInt("spare")
-        model.newLayer().addHostFunction(sort_descending_float)
-        std::mt19937 rd(888)  # Fixed seed (at Pete's request)
-        std::uniform_real_distribution Float dist(1, 1000000)
+        agent.newVariableFloat("spare")
+        func = sort_descending_float()
+        model.newLayer().addHostFunctionCallback(func)
+        rand.seed(a=31313131)
 
         # Init pop
         pop = pyflamegpu.AgentPopulation(agent, AGENT_COUNT)
         for i in range(AGENT_COUNT): 
             instance = pop.getNextInstance()
-            const float t = dist(rd)
+            t = rand.uniform(1, 1000000)
             instance.setVariableFloat("float", t)
-            instance.setVariableInt("spare", static_castInt(t+12))
+            instance.setVariableFloat("spare", t+12.0)
         
         # Setup Model
         cuda_model = pyflamegpu.CUDAAgentModel(model)
@@ -103,34 +103,37 @@ class HostAgentSort(TestCase):
         # Check results
         cuda_model.getPopulationData(pop)
         assert AGENT_COUNT == pop.getCurrentListSize()
-        float prev = 1000000
+        prev = 1000000
         for i in range(AGENT_COUNT): 
             instance = pop.getInstanceAt(i)
-            const float f = instance.getVariableFloat("float")
-            const int s = instance.getVariableInt("spare")
+            f = instance.getVariableFloat("float")
+            s = instance.getVariableFloat("spare")
             # Agent variables are still aligned
-            assert static_castInt(f+12) == s
+            assert f+12.0 == s
             # Agent variables are ordered
-            EXPECT_LE(f, prev)
+            assert f <= prev
             # Store prev
             prev = f
         
 
-    def test_Ascending_int(self): 
+    def test_ascending_int(self): 
         # Define model
         model = pyflamegpu.ModelDescription("model")
         agent = model.newAgent("agent")
         agent.newVariableInt("int")
         agent.newVariableInt("spare")
-        model.newLayer().addHostFunction(sort_ascending_int)
-        std::mt19937 rd(77777)  # Fixed seed (at Pete's request)
-        std::uniform_int_distribution Int dist(0, 1000000)
+        func = sort_ascending_int()
+        model.newLayer().addHostFunctionCallback(func)
+        rand.seed(a=31313131)
 
         # Init pop
         pop = pyflamegpu.AgentPopulation(agent, AGENT_COUNT)
         for i in range(AGENT_COUNT): 
             instance = pop.getNextInstance()
-            const int t = i == AGENT_COUNT/2 ? 0 : dist(rd)  # Ensure zero is output atleast once
+            if i == AGENT_COUNT/2 : # Ensure zero is output at least once
+                t = 0 
+            else:
+                t = int(rand.uniform(1, 1000000)) 
             instance.setVariableInt("int", t)
             instance.setVariableInt("spare", t+12)
         
@@ -142,34 +145,33 @@ class HostAgentSort(TestCase):
         # Check results
         cuda_model.getPopulationData(pop)
         assert AGENT_COUNT == pop.getCurrentListSize()
-        int prev = 0
+        prev = 0
         for i in range(AGENT_COUNT): 
             instance = pop.getInstanceAt(i)
-            const int f = instance.getVariableInt("int")
-            const int s = instance.getVariableInt("spare")
+            f = instance.getVariableInt("int")
+            s = instance.getVariableInt("spare")
             # Agent variables are still aligned
             assert s-f == 12
             # Agent variables are ordered
             assert f >= prev
             # Store prev
-            prev = f
-        
+            prev = f   
 
-    def test_Descending_int(self): 
+    def test_descending_int(self): 
         # Define model
         model = pyflamegpu.ModelDescription("model")
         agent = model.newAgent("agent")
         agent.newVariableInt("int")
         agent.newVariableInt("spare")
-        model.newLayer().addHostFunction(sort_descending_int)
-        std::mt19937 rd(12)  # Fixed seed (at Pete's request)
-        std::uniform_int_distribution Int dist(1, 1000000)
+        func = sort_descending_int()
+        model.newLayer().addHostFunctionCallback(func)
+        rand.seed(a=31313131)
 
         # Init pop
         pop = pyflamegpu.AgentPopulation(agent, AGENT_COUNT)
         for i in range(AGENT_COUNT): 
             instance = pop.getNextInstance()
-            const int t = dist(rd)
+            t = int(rand.uniform(1, 1000000))
             instance.setVariableInt("int", t)
             instance.setVariableInt("spare", t+12)
         
@@ -181,17 +183,16 @@ class HostAgentSort(TestCase):
         # Check results
         cuda_model.getPopulationData(pop)
         assert AGENT_COUNT == pop.getCurrentListSize()
-        int prev = 1000000
+        prev = 1000000
         for i in range(AGENT_COUNT): 
             instance = pop.getInstanceAt(i)
-            const int f = instance.getVariableInt("int")
-            const int s = instance.getVariableInt("spare")
+            f = instance.getVariableInt("int")
+            s = instance.getVariableInt("spare")
             # Agent variables are still aligned
             assert s-f == 12
             # Agent variables are ordered
-            EXPECT_LE(f, prev)
+            assert f <= prev
             # Store prev
             prev = f
-        
-"""
+
 
