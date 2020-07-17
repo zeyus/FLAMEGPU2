@@ -35,8 +35,8 @@ class step_func(pyflamegpu.HostFunctionCallback):
         self.out = [0] * TEST_LEN
 
     def run(self, FLAMEGPU):
+        rand_func = getattr(FLAMEGPU.random, f"{self.function}{self.Type}")
         for i in range(TEST_LEN):
-            rand_func = getattr(FLAMEGPU.random, f"{self.function}{self.Type}")
             # call the typed function and expect no throws
             if self.arga is not None and self.argb is not None:
                 self.out[i] = rand_func(self.arga, self.argb)
@@ -82,58 +82,40 @@ class step_func(pyflamegpu.HostFunctionCallback):
         # expect at least one difference
         assert diff == 0
 
-"""
-FLAMEGPU_STEP_FUNCTION(step_uniform_uchar_range) 
-    for (auto i : unsigned_char_out)
-        ASSERT_NO_THROW(i = FLAMEGPU.random.uniform<unsigned char>(
-            static_cast<unsigned char>(UCHAR_MAX * 0.25),
-            static_cast<unsigned char>(UCHAR_MAX * 0.75)))
-}
-FLAMEGPU_STEP_FUNCTION(step_uniform_char_range) 
-    for (char i : char_out)
-        ASSERT_NO_THROW(i = FLAMEGPU.random.uniform<char>(
-            static_cast<char>(CHAR_MIN * 0.5),
-            static_cast<char>(CHAR_MAX * 0.5)))
-}
-FLAMEGPU_STEP_FUNCTION(step_uniform_ushort_range) 
-    for (auto i : unsigned_short_out)
-        ASSERT_NO_THROW(i = FLAMEGPU.random.uniform<uint16_t>(
-            static_cast<uint16_t>(UINT16_MAX * 0.25),
-            static_cast<uint16_t>(UINT16_MAX * 0.75)))
-}
-FLAMEGPU_STEP_FUNCTION(step_uniform_short_range) 
-    for (auto i : short_out)
-        ASSERT_NO_THROW(i = FLAMEGPU.random.uniform<int16_t>(
-            static_cast<int16_t>(INT16_MIN * 0.5),
-            static_cast<int16_t>(INT16_MAX * 0.5)))
-}
-FLAMEGPU_STEP_FUNCTION(step_uniform_uint_range) 
-    for (auto i : unsigned_int_out)
-        ASSERT_NO_THROW(i = FLAMEGPU.random.uniform<unsigned int>(
-            static_cast<unsigned int>(UINT_MAX * 0.25),
-            static_cast<unsigned int>(UINT_MAX * 0.75)))
-}
-FLAMEGPU_STEP_FUNCTION(step_uniform_int_range) 
-    for (auto i : int_out)
-        ASSERT_NO_THROW(i = FLAMEGPU.random.uniform<int>(
-            static_cast<int>(INT_MIN * 0.5),
-            static_cast<int>(INT_MAX * 0.5)))
-}
-FLAMEGPU_STEP_FUNCTION(step_uniform_ulonglong_range) 
-    for (auto i : unsigned_longlong_out)
-        ASSERT_NO_THROW(i = FLAMEGPU.random.uniform<uint64_t>(
-            static_cast<uint64_t>(UINT64_MAX * 0.25),
-            static_cast<uint64_t>(UINT64_MAX * 0.75)))
-}
-FLAMEGPU_STEP_FUNCTION(step_uniform_longlong_range) 
-    for (auto i : longlong_out)
-        ASSERT_NO_THROW(i = FLAMEGPU.random.uniform<int64_t>(
-            static_cast<int64_t>(INT64_MIN >> 1),
-            static_cast<int64_t>(INT64_MAX >> 1)))
-}
 
-"""
+class step_func_uniform_range(pyflamegpu.HostFunctionCallback):
+    def __init__(self, Type, min, max):
+        """
+        arga and argb mayebe either min/max or mena/stdv
+        """
+        super().__init__()
+        self.Type = Type
+        self.reset_out()
+        self.min = min
+        self.max = max
 
+    def reset_out(self):
+        self.out = [0] * TEST_LEN
+
+    def run(self, FLAMEGPU):
+        rand_func = getattr(FLAMEGPU.random, f"uniform{self.Type}")
+        for i in range(TEST_LEN):
+            # call the typed function and expect no throws
+            if self.min is not None and self.max is not None:
+                self.out[i] = rand_func(self.min, self.max)
+            else:
+                self.out[i] = rand_func()
+                
+    def assert_range(self):
+        for i in range(TEST_LEN):
+            if self.min is not None:
+                assert self.out[i] <= self.max
+            else:
+                assert self.out[i] <= 1.0
+            if self.max is not None:
+                assert self.out[i] >= self.min
+            else:
+                assert self.out[i] >= 0.0
 
 class MiniSim():
 
@@ -157,11 +139,11 @@ class MiniSim():
         # So copy across population data here
         self.cuda_model.getPopulationData(self.population)
         
-    def rand_test(self, function, Type, min=None, max=None):
+    def rand_test(self, function, Type, arga=None, argb=None):
         """
         Main contexts of tests are parameterised in this function by random function type (normal/uniform) and the variable type
         """
-        step = step_func(function, Type, min, max)
+        step = step_func(function, Type, arga, argb)
         self.model.addStepFunctionCallback(step)
         # Initially 0
         step.assert_zero()
@@ -188,6 +170,12 @@ class MiniSim():
         step.assert_diff_zero()
         # Old Seed == old values
         step.assert_diff_same(_out)
+        
+    def range_test(self, Type, min=None, max=None):
+        step = step_func_uniform_range(Type, min, max)
+        self.model.addStepFunctionCallback(step)
+        self.run([])
+        step.assert_range()
         
 
 class HostRandomTest(TestCase):
@@ -216,120 +204,69 @@ class HostRandomTest(TestCase):
         ms = MiniSim()
         ms.rand_test("logNormal", "Double", 0, 1)
         
-    def test_uniform_Int16(self):
+    def test_uniform_int16(self):
         ms = MiniSim()
         ms.rand_test("uniform", "Int16", 0, INT16_MAX)
         
-    def test_uniform_Int32(self):
+    def test_uniform_int32(self):
         ms = MiniSim()
         ms.rand_test("uniform", "Int32", 0, INT32_MAX)
         
-    def test_uniform_Int64(self):
+    def test_uniform_int64(self):
         ms = MiniSim()
         ms.rand_test("uniform", "Int64", 0, INT64_MAX)
         
-    def test_uniform_UInt16(self):
+    def test_uniform_uint16(self):
         ms = MiniSim()
         ms.rand_test("uniform", "UInt16", 0, UINT16_MAX)
         
-    def test_uniform_UInt32(self):
+    def test_uniform_uint32(self):
         ms = MiniSim()
         ms.rand_test("uniform", "UInt32", 0, UINT32_MAX)
         
-    def test_uniform_UInt64(self):
+    def test_uniform_uint64(self):
         ms = MiniSim()
         ms.rand_test("uniform", "UInt64", 0, UINT64_MAX)
 
-"""
+
+    # Range tests
 
 
-/**
- * Range tests
- */
-TEST_F(HostRandomTest, UniformFloatRange) 
-    ms.model.addStepFunction(step_uniform_float)
-    ms.run()
-    for (auto i : float_out) 
-        EXPECT_GE(i, 0.0f)
-        EXPECT_LT(i, 1.0f)
-    }
-}
-TEST_F(HostRandomTest, UniformDoubleRange) 
-    ms.model.addStepFunction(step_uniform_double)
-    ms.run()
-    for (auto i : double_out) 
-        EXPECT_GE(i, 0.0f)
-        EXPECT_LT(i, 1.0f)
-    }
-}
+    def test_uniform_float_range(Self):
+        ms = MiniSim()
+        ms.range_test("Float")
+        
+    def test_uniform_double_range(Self):
+        ms = MiniSim()
+        ms.range_test("Double")
+        
+    def test_uniform_int16_range(Self):
+        ms = MiniSim()
+        ms.range_test("Int16", int(INT16_MAX*0.5), int(INT16_MAX*0.5))
+        
+    def test_uniform_uint16_range(Self):
+        ms = MiniSim()
+        ms.range_test("UInt16", int(UINT16_MAX*0.25), int(UINT16_MAX*0.75))
+        
+    def test_uniform_int32_range(Self):
+        ms = MiniSim()
+        ms.range_test("Int32", int(INT32_MAX*0.5), int(INT32_MAX*0.5))
+        
+    def test_uniform_uint32_range(Self):
+        ms = MiniSim()
+        ms.range_test("UInt32", int(UINT32_MAX*0.25), int(UINT32_MAX*0.75))
+        
+    def test_uniform_int64_range(Self):
+        ms = MiniSim()
+        ms.range_test("Int64", int(INT64_MAX*0.5), int(INT64_MAX*0.5))
+        
+    def test_uniform_uint64_range(Self):
+        ms = MiniSim()
+        ms.range_test("UInt64", int(UINT64_MAX*0.25), int(UINT64_MAX*0.75))
+        
+    
 
-TEST_F(HostRandomTest, UniformUCharRange) 
-    ms.model.addStepFunction(step_uniform_uchar_range)
-    ms.run()
-    for (auto i : unsigned_char_out) 
-        EXPECT_GE(i, static_cast<unsigned char>(UCHAR_MAX*0.25))
-        EXPECT_LE(i, static_cast<unsigned char>(UCHAR_MAX*0.75))
-    }
-}
-TEST_F(HostRandomTest, UniformCharRange) 
-    ms.model.addStepFunction(step_uniform_char_range)
-    ms.run()
-    for (auto i : unsigned_char_out) 
-        EXPECT_GE(i, static_cast<char>(CHAR_MIN*0.5))
-        EXPECT_LE(i, static_cast<char>(CHAR_MAX*0.5))
-    }
-}
 
-TEST_F(HostRandomTest, UniformUShortRange) 
-    ms.model.addStepFunction(step_uniform_ushort_range)
-    ms.run()
-    for (auto i : unsigned_short_out) 
-        EXPECT_GE(i, static_cast<uint16_t>(UINT16_MAX*0.25))
-        EXPECT_LE(i, static_cast<uint16_t>(UINT16_MAX*0.75))
-    }
-}
-TEST_F(HostRandomTest, UniformShortRange) 
-    ms.model.addStepFunction(step_uniform_short_range)
-    ms.run()
-    for (auto i : short_out) 
-        EXPECT_GE(i, static_cast<int16_t>(INT16_MIN*0.5))
-        EXPECT_LE(i, static_cast<int16_t>(INT16_MAX*0.5))
-    }
-}
 
-TEST_F(HostRandomTest, UniformUIntRange) 
-    ms.model.addStepFunction(step_uniform_uint_range)
-    ms.run()
-    for (auto i : unsigned_int_out) 
-        EXPECT_GE(i, static_cast<unsigned int>(UINT_MAX*0.25))
-        EXPECT_LE(i, static_cast<unsigned int>(UINT_MAX*0.75))
-    }
-}
-TEST_F(HostRandomTest, UniformIntRange) 
-    ms.model.addStepFunction(step_uniform_int_range)
-    ms.run()
-    for (auto i : int_out) 
-        EXPECT_GE(i, static_cast<int>(INT_MIN*0.5))
-        EXPECT_LE(i, static_cast<int>(INT_MAX*0.5))
-    }
-}
 
-TEST_F(HostRandomTest, UniformULongLongRange) 
-    ms.model.addStepFunction(step_uniform_ulonglong_range)
-    ms.run()
-    for (auto i : unsigned_longlong_out) 
-        EXPECT_GE(i, static_cast<uint64_t>(UINT64_MAX*0.25))
-        EXPECT_LE(i, static_cast<uint64_t>(UINT64_MAX*0.75))
-    }
-}
-TEST_F(HostRandomTest, UniformLongLongRange) 
-    ms.model.addStepFunction(step_uniform_longlong_range)
-    ms.run()
-    for (auto i : longlong_out) 
-        EXPECT_GE(i, static_cast<int64_t>(INT64_MIN >> 1))
-        EXPECT_LE(i, static_cast<int64_t>(INT64_MAX >> 1))
-    }
-}
-
-"""
 
