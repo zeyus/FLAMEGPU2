@@ -72,7 +72,7 @@
 
 
 /**
- * TEMPLATE_VARIABLE_INSTANTIATE macro
+ * TEMPLATE_VARIABLE_INSTANTIATE_FLOATS macro
  * Expands for floating point types
  */
 %define TEMPLATE_VARIABLE_INSTANTIATE_FLOATS(function, classfunction) 
@@ -119,6 +119,30 @@ TEMPLATE_VARIABLE_INSTANTIATE_INTS(function, classfunction)
 //%template(function ## Bool) classfunction<bool>;
 %enddef
 
+
+/**
+ * TEMPLATE_SUM_INSTANTIATE macro
+ * Specific template expansion for sum which allows different return types to avoid range issues 
+ * Return with same type is not instanciated. I.e. All int type use 64 bit signed returned types
+ */
+%define TEMPLATE_SUM_INSTANTIATE(sum_class) 
+// float and double
+%template(sumFloat) sum_class ## ::sum<float>;
+%template(sumDouble) sum_class ## ::sum<double>;
+// int types
+%template(sumInt8) sum_class ## ::sumOutT<int8_t, int64_t>;
+%template(sumUInt8) sum_class ## ::sumOutT<uint8_t, uint64_t>;
+%template(sumInt16) sum_class ## ::sumOutT<int16_t, int64_t>;
+%template(sumUInt16) sum_class ## ::sumOutT<uint16_t, uint64_t>;
+%template(sumInt32) sum_class ## ::sumOutT<int32_t, int32_t>;
+%template(sumUInt32) sum_class ## ::sumOutT<uint32_t, uint32_t>;
+%template(sumInt64) sum_class ## ::sumOutT<int64_t, int64_t>;
+%template(sumUInt64) sum_class ## ::sumOutT<uint64_t, uint64_t>;
+// generic int types
+%template(sumInt) sum_class ## ::sumOutT<int, int64_t>;
+%template(sumUInt) sum_class ## ::sumOutT<unsigned int, uint64_t>;
+// no chars or bool
+%enddef
 
 
 /**
@@ -364,7 +388,15 @@ namespace EnvironmentManager{
 %ignore VarOffsetStruct; // not required but defined in flamegpu_host_new_agent_api
 %include "flamegpu/runtime/flamegpu_host_api.h"
 %include "flamegpu/runtime/flamegpu_host_new_agent_api.h"
+
 %include "flamegpu/runtime/flamegpu_host_agent_api.h"
+/* Extend HostAgentInstance to add a templated version of the sum function (with differing return type) with a different name so this can be instantiated */
+%extend HostAgentInstance{
+    template<typename InT, typename OutT> OutT HostAgentInstance::sumOutT(const std::string& variable) const {
+        return $self->sum<InT,OutT>(variable);
+    }
+}
+
 
 /* Extend HostRandom to add a templated version of the uniform function with a different name so this can be instantiated 
  * It is required to ingore the orginal defintion of uniform and seperate the two functions to have a distinct name
@@ -436,8 +468,12 @@ TEMPLATE_VARIABLE_INSTANTIATE(getVariable, AgentInstance::getVariable)
 TEMPLATE_VARIABLE_INSTANTIATE_N(getVariable, AgentInstance::getVariableArray)
 
 // Instanciate template versions of host agent instance functions from the API
+// Not currently supported: custom reductions, transformations or histograms
 TEMPLATE_VARIABLE_INSTANTIATE(sort, HostAgentInstance::sort)
-
+TEMPLATE_VARIABLE_INSTANTIATE(count, HostAgentInstance::count)
+TEMPLATE_VARIABLE_INSTANTIATE(min, HostAgentInstance::min)
+TEMPLATE_VARIABLE_INSTANTIATE(max, HostAgentInstance::max)
+TEMPLATE_SUM_INSTANTIATE(HostAgentInstance)
 
 // Instanciate template versions of host environment functions from the API
 TEMPLATE_VARIABLE_INSTANTIATE(get, HostEnvironment::get)
@@ -450,6 +486,7 @@ TEMPLATE_VARIABLE_INSTANTIATE(getVariable, FLAMEGPU_HOST_NEW_AGENT_API::getVaria
 TEMPLATE_VARIABLE_INSTANTIATE_N(getVariable, FLAMEGPU_HOST_NEW_AGENT_API::getVariable)
 TEMPLATE_VARIABLE_INSTANTIATE(setVariable, FLAMEGPU_HOST_NEW_AGENT_API::setVariable)
 TEMPLATE_VARIABLE_INSTANTIATE_N(setVariable, FLAMEGPU_HOST_NEW_AGENT_API::setVariable)
+
 
 // Instanciate template versions of environment description functions from the API
 TEMPLATE_VARIABLE_INSTANTIATE(add, EnvironmentDescription::add)
