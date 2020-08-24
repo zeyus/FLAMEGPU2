@@ -958,6 +958,15 @@ namespace {
 void CUDAAgentModel::initialiseSingletons() {
     // Only do this once.
     if (!singletonsInitialised) {
+        // Create events to establish this timing.
+        float initialisation_elapsed_time = 0.f;
+        cudaEvent_t initialisationStartEvent = nullptr;
+        cudaEvent_t initialisationEndEvent = nullptr;
+        gpuErrchk(cudaEventCreate(&initialisationStartEvent));
+        gpuErrchk(cudaEventCreate(&initialisationEndEvent));
+        // Record the start event.
+        gpuErrchk(cudaEventRecord(initialisationStartEvent));
+
         // If the device has not been specified, also check the compute capability is OK
         // Check the compute capability of the device, throw an exception if not valid for the executable.
         if (!util::compute_capability::checkComputeCapability(static_cast<int>(config.device_id))) {
@@ -1000,6 +1009,22 @@ void CUDAAgentModel::initialiseSingletons() {
             sm.second->initialiseSingletons();
         }
 
+        gpuErrchk(cudaEventRecord(initialisationEndEvent));
+        // Syncrhonize the stop event
+        gpuErrchk(cudaEventSynchronize(initialisationEndEvent));
+        gpuErrchk(cudaEventElapsedTime(&initialisation_elapsed_time, initialisationStartEvent, initialisationEndEvent));
+
+        gpuErrchk(cudaEventDestroy(initialisationStartEvent));
+        gpuErrchk(cudaEventDestroy(initialisationEndEvent));
+        initialisationStartEvent = nullptr;
+        initialisationEndEvent = nullptr;
+
+        if (getSimulationConfig().timing) {
+            // Record the end event.
+            // Resolution is 0.5 microseconds, so print to 1 us.
+            fprintf(stdout, "Initialisation time: %.3f ms\n", initialisation_elapsed_time);
+        }
+
         singletonsInitialised = true;
     }
 
@@ -1013,6 +1038,16 @@ void CUDAAgentModel::initialiseSingletons() {
 void CUDAAgentModel::initialiseRTC() {
     // Only do this once.
     if (!rtcInitialised) {
+
+        // Create events to establish this timing.
+        float initialisation_elapsed_time = 0.f;
+        cudaEvent_t initialisationStartEvent = nullptr;
+        cudaEvent_t initialisationEndEvent = nullptr;
+        gpuErrchk(cudaEventCreate(&initialisationStartEvent));
+        gpuErrchk(cudaEventCreate(&initialisationEndEvent));
+        // Record the start event.
+        gpuErrchk(cudaEventRecord(initialisationStartEvent));
+
         // Create jitify cache
         if (!rtc_kernel_cache) {
             rtc_kernel_cache = new jitify::JitCache();
@@ -1039,6 +1074,22 @@ void CUDAAgentModel::initialiseRTC() {
 
         // Initialise device environment for RTC
         singletons->environment.initRTC(*this);
+
+        gpuErrchk(cudaEventRecord(initialisationEndEvent));
+        // Syncrhonize the stop event
+        gpuErrchk(cudaEventSynchronize(initialisationEndEvent));
+        gpuErrchk(cudaEventElapsedTime(&initialisation_elapsed_time, initialisationStartEvent, initialisationEndEvent));
+
+        gpuErrchk(cudaEventDestroy(initialisationStartEvent));
+        gpuErrchk(cudaEventDestroy(initialisationEndEvent));
+        initialisationStartEvent = nullptr;
+        initialisationEndEvent = nullptr;
+        
+        if (getSimulationConfig().timing) {
+            // Record the end event.
+            // Resolution is 0.5 microseconds, so print to 1 us.
+            fprintf(stdout, "RTC Initialisation time: %.3f ms\n", initialisation_elapsed_time);
+        }
 
         rtcInitialised = true;
     }
