@@ -19,7 +19,7 @@
  * http://stackoverflow.com/questions/12388207/interpreting-output-of-ptxas-options-v
  */
 
-#define AGENT_COUNT 32
+//#define AGENT_COUNT 32
 #define EXPECT_EQ(x, y) if (x != y) printf("%d not equal to %d", static_cast<int>(x), static_cast<int>(y))
 
 
@@ -32,67 +32,83 @@ FLAMEGPU_AGENT_FUNCTION(MandatoryOutput, MsgNone, MsgNone) {
 }
 )###";
 
+
+
+const char *MODEL_NAME = "Model";
+const char *AGENT_NAME = "Agent";
+const char *MESSAGE_NAME = "Message";
+const char *IN_FUNCTION_NAME = "InFunction";
+const char *OUT_FUNCTION_NAME = "OutFunction";
+const char *IN_LAYER_NAME = "InLayer";
+const char *OUT_LAYER_NAME = "OutLayer";
+const unsigned int AGENT_COUNT = 128;
+
+const char* OutFunction = R"###(
+FLAMEGPU_AGENT_FUNCTION(OutFunction, MsgNone, MsgArray) {
+    const unsigned int index = FLAMEGPU->getVariable<unsigned int>("message_write");
+    FLAMEGPU->message_out.setVariable<unsigned int>("index_times_3", index * 3);
+    FLAMEGPU->message_out.setIndex(index);
+    return ALIVE;
+}
+)###";
+
+const char* InFunction = R"###(
+FLAMEGPU_AGENT_FUNCTION(InFunction, MsgArray, MsgNone) {
+    const unsigned int my_index = FLAMEGPU->getVariable<unsigned int>("index");
+    const auto &message = FLAMEGPU->message_in.at(my_index);
+    FLAMEGPU->setVariable("message_read", message.getVariable<unsigned int>("index_times_3"));
+    return ALIVE;
+}
+)###";
+
+
+
 /**
  * Test an RTC function to an agent function condition (where the condition is not compiled using RTC)
  */
 int main() {
-    // Define model
-    ModelDescription model("Spatial3DMsgTestModel");
-    AgentDescription &agent = model.newAgent("agent");
-    AgentDescription &agent2 = model.newAgent("agent2");
-    agent.newState("a");
-    agent.newState("b");
-    agent.newVariable<float>("x");
-    agent.newVariable<unsigned int>("id");
-    agent2.newVariable<float>("x");
-    agent2.newVariable<unsigned int>("id");
-    AgentFunctionDescription &function = agent2.newRTCFunction("output", rtc_func);
-    function.setAgentOutput(agent, "b");
-    LayerDescription &layer1 = model.newLayer();
-    layer1.addAgentFunction(function);
-    // Init agent pop
-    CUDAAgentModel cuda_model(model);
-    AgentPopulation population(model.Agent("agent2"), AGENT_COUNT);
-    // Initialise agents
-    for (unsigned int i = 0; i < AGENT_COUNT; i++) {
-        AgentInstance instance = population.getNextInstance();
-        instance.setVariable<float>("x", i + 1.0f);
-        instance.setVariable<unsigned int>("id", i);
+    ModelDescription m(MODEL_NAME);
+    MsgArray::Description &msg = m.newMessage<MsgArray>(MESSAGE_NAME);
+    msg.setLength(AGENT_COUNT);
+    msg.newVariable<unsigned int>("index_times_3");
+    AgentDescription &a = m.newAgent(AGENT_NAME);
+    a.newVariable<unsigned int>("index");
+    a.newVariable<unsigned int>("message_read", UINT_MAX);
+    a.newVariable<unsigned int>("message_write");
+    AgentFunctionDescription &fo = a.newRTCFunction(OUT_FUNCTION_NAME, OutFunction);
+    fo.setMessageOutput(msg);
+    AgentFunctionDescription &fi = a.newRTCFunction(IN_FUNCTION_NAME, InFunction);
+    fi.setMessageInput(msg);
+    LayerDescription &lo = m.newLayer(OUT_LAYER_NAME);
+    lo.addAgentFunction(fo);
+    LayerDescription &li = m.newLayer(IN_LAYER_NAME);
+    li.addAgentFunction(fi);
+    // Create a list of numbers
+    std::array<unsigned int, AGENT_COUNT> numbers;
+    for (unsigned int i = 0; i < AGENT_COUNT; ++i) {
+        numbers[i] = i;
     }
-    cuda_model.setPopulationData(population);
-    // Execute model
-    cuda_model.step();
-    // Test output
-    AgentPopulation newPopulation(model.Agent("agent"));
-    cuda_model.getPopulationData(population);
-    cuda_model.getPopulationData(newPopulation);
+    // Shuffle the list of numbers
+    const unsigned seed = static_cast<unsigned int>(std::chrono::system_clock::now().time_since_epoch().count());
+    std::shuffle(numbers.begin(), numbers.end(), std::default_random_engine(seed));
+    // Assign the numbers in shuffled order to agents
+    AgentPopulation pop(a, AGENT_COUNT);
+    for (unsigned int i = 0; i < AGENT_COUNT; ++i) {
+        AgentInstance ai = pop.getNextInstance();
+        ai.setVariable<unsigned int>("index", i);
+        ai.setVariable<unsigned int>("message_read", UINT_MAX);
+        ai.setVariable<unsigned int>("message_write", numbers[i]);
+    }
+    // Set pop in model
+    CUDAAgentModel c(m);
+    c.setPopulationData(pop);
+    c.step();
+    c.getPopulationData(pop);
     // Validate each agent has same result
-    EXPECT_EQ(population.getCurrentListSize(), AGENT_COUNT);
-    EXPECT_EQ(newPopulation.getCurrentListSize("b"), AGENT_COUNT);
-    unsigned int is_1_mod2_0 = 0;
-    unsigned int is_1_mod2_1 = 0;
-    for (unsigned int i = 0; i < population.getCurrentListSize(); ++i) {
-        AgentInstance ai = population.getInstanceAt(i);
-        EXPECT_EQ(ai.getVariable<float>("x") - ai.getVariable<unsigned int>("id"), 1.0f);
-        if (ai.getVariable<unsigned int>("id") % 2 == 0) {
-            is_1_mod2_0++;
-        } else {
-            is_1_mod2_1++;
-        }
+    for (unsigned int i = 0; i < AGENT_COUNT; ++i) {
+        AgentInstance ai = pop.getInstanceAt(i);
+        const unsigned int index = ai.getVariable<unsigned int>("index");
+        const unsigned int message_read = ai.getVariable<unsigned int>("message_read");
+        EXPECT_EQ(index * 3, message_read);
     }
-    EXPECT_EQ(is_1_mod2_0, AGENT_COUNT / 2);
-    EXPECT_EQ(is_1_mod2_1, AGENT_COUNT / 2);
-    unsigned int is_12_mod2_0 = 0;
-    unsigned int is_12_mod2_1 = 0;
-    for (unsigned int i = 0; i < newPopulation.getCurrentListSize("b"); ++i) {
-        AgentInstance ai = newPopulation.getInstanceAt(i, "b");
-        EXPECT_EQ(ai.getVariable<float>("x") - ai.getVariable<unsigned int>("id"), 12.0f);
-        if (ai.getVariable<unsigned int>("id") % 2 == 0) {
-            is_12_mod2_0++;
-        } else {
-            is_12_mod2_1++;
-        }
-    }
-    EXPECT_EQ(is_12_mod2_0, AGENT_COUNT / 2);
-    EXPECT_EQ(is_12_mod2_1, AGENT_COUNT / 2);
 }

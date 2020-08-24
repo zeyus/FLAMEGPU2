@@ -4,7 +4,6 @@ from pyflamegpu import *
 import random as rand
 
 TEST_LEN = 256
-AGENT_COUNT = 5
 
 INT8_MAX = 127 
 INT16_MAX = 32767  
