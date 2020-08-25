@@ -364,4 +364,35 @@ __device__ void MsgArray::Out::setVariable(const char(&variable_name)[N], T valu
     // setIndex() sets the optional msg scan flag
 }
 
+/**
+* Sets the array index to store the message in
+*/
+__device__ inline void MsgArray::Out::setIndex(const size_type &id) const {
+    unsigned int index = (blockDim.x * blockIdx.x) + threadIdx.x;
+
+    // Todo: checking if the output message type is single or optional?  (d_message_type)
+
+    // set the variable using curve
+    Curve::setVariable<size_type>("___INDEX", combined_hash, id, index);
+
+    // Set scan flag incase the message is optional
+    this->scan_flag[index] = 1;
+}
+__device__ inline MsgArray::In::Filter::Filter(const size_type &_length, const Curve::NamespaceHash &_combined_hash, const size_type &x, const size_type &_radius)
+    : radius(_radius)
+    , length(_length)
+    , combined_hash(_combined_hash) {
+    loc = x;
+}
+__device__ inline MsgArray::In::Filter::Message& MsgArray::In::Filter::Message::operator++() {
+    relative_cell++;
+    // Skip origin cell
+    if (relative_cell == 0) {
+        relative_cell++;
+    }
+    // Wrap over boundaries
+    index_1d = (this->_parent.loc + relative_cell + this->_parent.length) % this->_parent.length;
+    return *this;
+}
+
 #endif  // INCLUDE_FLAMEGPU_RUNTIME_MESSAGING_ARRAY_ARRAYDEVICE_H_
