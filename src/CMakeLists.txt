@@ -258,6 +258,7 @@ if (VISUALISATION)
         ${FLAMEGPU_ROOT}/include/flamegpu/visualiser/color/ColorFunction.h
         ${FLAMEGPU_ROOT}/include/flamegpu/visualiser/color/StaticColor.h
         ${FLAMEGPU_ROOT}/include/flamegpu/visualiser/color/HSVInterpolation.h
+        ${FLAMEGPU_ROOT}/include/flamegpu/visualiser/color/palette/Dark2.h
     )
     SET(SRC_FLAMEGPU2
         ${SRC_FLAMEGPU2}
@@ -268,6 +269,7 @@ if (VISUALISATION)
         ${FLAMEGPU_ROOT}/src/flamegpu/visualiser/LineVis.cpp
         ${FLAMEGPU_ROOT}/src/flamegpu/visualiser/color/StaticColor.cpp
         ${FLAMEGPU_ROOT}/src/flamegpu/visualiser/color/HSVInterpolation.cpp
+        ${FLAMEGPU_ROOT}/src/flamegpu/visualiser/color/palette/Dark2.cpp
     )
 endif()
 SET(ALL_SRC

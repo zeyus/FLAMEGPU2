@@ -23,7 +23,11 @@ class StaticColor : public ColorFunction {
      * @param g Green value
      * @param b Blue value
      */
-    constexpr StaticColor(const float &r, const float &g, const float &b);
+    constexpr StaticColor(const float& r, const float& g, const float& b);
+    /**
+     * Create a static colour from a 3 or 6 char hexcode
+     */
+    StaticColor(const char *hexcode);
     /**
      * Returns a function returning a constant color in the form:
      * vec4 calculateColor() {
@@ -33,10 +37,11 @@ class StaticColor : public ColorFunction {
     std::string getSrc() const override;
 
  private:
-  /**
-   * Shader controls RGBA values, but currently we only expose RGB (A support is somewhat untested)
-   */
-  const std::array<float, 4> rgba;
+    std::array<float, 4> fromHEX(const char hex[3]);
+    /**
+     * Shader controls RGBA values, but currently we only expose RGB (A support is somewhat untested)
+     */
+    const std::array<float, 4> rgba;
 };
 
 #endif  // INCLUDE_FLAMEGPU_VISUALISER_COLOR_STATICCOLOR_H_
