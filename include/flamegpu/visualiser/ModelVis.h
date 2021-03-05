@@ -1,5 +1,6 @@
 #ifndef INCLUDE_FLAMEGPU_VISUALISER_MODELVIS_H_
 #define INCLUDE_FLAMEGPU_VISUALISER_MODELVIS_H_
+#ifdef VISUALISATION
 
 #include <string>
 #include <unordered_map>
@@ -188,5 +189,5 @@ class ModelVis {
      */
     std::unique_ptr<FLAMEGPU_Visualisation> visualiser;
 };
-
+#endif  // VISUALISATION
 #endif  // INCLUDE_FLAMEGPU_VISUALISER_MODELVIS_H_
