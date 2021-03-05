@@ -6,7 +6,7 @@
 #include "flamegpu/visualiser/color/ColorFunction.h"
 
 class HSVInterpolation : public ColorFunction {
-public:
+ public:
     /**
      * 0 = Red, 1 = Green
      * @param variable_name float agent variable to map to the color
@@ -57,7 +57,7 @@ public:
      */
     std::string getAgentVariableName() const override;
 
-private:
+ private:
     /**
      * Bounds that the agent variable is clamped to
      * Defaults to [0.0, 1.0]

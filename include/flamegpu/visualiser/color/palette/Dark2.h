@@ -5,14 +5,22 @@
 #include "flamegpu/exception/FGPUException.h"
 
 /**
- * Color blind friendly qualitative pallete
+ * Color blind friendly qualitative palette
  * Dark2 from Colorbrewer
  * @note Color names are approximations using https://www.color-blindness.com/color-name-hue/
  */
 class Dark2 {
-public:
-    const static StaticColor ELF_GREEN, TAWNY, RICH_BLUE, RAZZMATAZZ, CHRISTI, GAMBOGE, GOLDEN_BROWN, MORTAR;
-    const static std::array<StaticColor, 8> ARRAY;
+ public:
+    static const StaticColor
+        ELF_GREEN,
+        TAWNY,
+        RICH_BLUE,
+        RAZZMATAZZ,
+        CHRISTI,
+        GAMBOGE,
+        GOLDEN_BROWN,
+        MORTAR;
+
     /**
      * Dark2 has 8 colors
      */

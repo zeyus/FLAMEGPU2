@@ -27,7 +27,7 @@ class StaticColor : public ColorFunction {
     /**
      * Create a static colour from a 3 or 6 char hexcode
      */
-    StaticColor(const char *hexcode);
+    explicit StaticColor(const char *hexcode);
     /**
      * Returns a function returning a constant color in the form:
      * vec4 calculateColor() {
