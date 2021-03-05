@@ -66,7 +66,7 @@ FLAMEGPU_STEP_FUNCTION(Validation) {
     printf("%.2f%% Drift correct\n", 100 * driftDropped / static_cast<float>(driftDropped + driftIncreased));
 }
 int main(int argc, const char ** argv) {
-    ModelDescription model("Circles_BruteForce_example");
+    ModelDescription model("Circles_Spatial3D_example");
 
     const unsigned int AGENT_COUNT = 16384;
     const float ENV_MAX = static_cast<float>(floor(cbrt(AGENT_COUNT)));
@@ -131,6 +131,7 @@ int main(int argc, const char ** argv) {
         // Position vars are named x, y, z; so they are used by default
         circ_agt.setModel(Stock::Models::ICOSPHERE);
         circ_agt.setModelScale(1/10.0f);
+        circ_agt.setColor(StaticColor::WHITE);
         // Render the Subdivision of spatial messaging
         {
             const float ENV_MIN = 0;
