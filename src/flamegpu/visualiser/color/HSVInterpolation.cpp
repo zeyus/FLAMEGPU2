@@ -12,7 +12,9 @@ HSVInterpolation HSVInterpolation::GREENRED(const std::string& variable_name) {
 }
 
 HSVInterpolation::HSVInterpolation(const std::string &_variable_name, const float& hMin, const float& hMax, const float& s, const float& v)
-    : hue_min(hMin)
+    : min_bound(0.0f)
+    , max_bound(1.0f)
+    , hue_min(hMin)
     , hue_max(hMax)
     , saturation(s)
     , val(v)
@@ -29,6 +31,16 @@ HSVInterpolation::HSVInterpolation(const std::string &_variable_name, const floa
     if (val < 0.0f || val > 1.0f) {
         THROW InvalidArgument("%f is not a valid val, val must be in the inclusive [0.0, 1.0]\n", val);
     }
+}
+HSVInterpolation& HSVInterpolation::setBounds(const float& _min_bound, const float& _max_bound) {
+    if (_min_bound >= _max_bound) {
+        THROW InvalidArgument("max_bound (%f) must be greater than min_bound (%f), "
+        "in HSVInterpolation::setBounds()\n",
+        _max_bound, _min_bound);
+    }
+    min_bound = _min_bound;
+    max_bound = _max_bound;
+    return *this;
 }
 std::string HSVInterpolation::getSrc() const {
 static const char* HEADER = R"###(
@@ -66,7 +78,9 @@ vec3 hsv2rgb(vec3 hsv) {
     // Fetch the modifier from texture cache
     ss << "    float modifier = texelFetch(color_arg, gl_InstanceID).x;" << "\n";
     // Clamp the modifier to bounds
-    ss << "    modifier = clamp(modifier, 0, 1);" << "\n";
+    ss << "    modifier = clamp(modifier, " << min_bound << ", " << max_bound << ");" << "\n";
+    // Scale modifier to range [0.0, 1.0]
+    ss << "    modifier = (modifier - " << min_bound << ") / " << (max_bound - min_bound) << ";" << "\n";
     // Apply HSV interpolation
     if (hue_min < hue_max) {
         ss << "    return vec4(hsv2rgb(vec3(" << hue_min << " + (modifier * " << (hue_max - hue_min) << "), " << saturation << ", " << val << ")), 1.0);" << "\n";

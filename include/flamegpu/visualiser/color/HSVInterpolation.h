@@ -28,6 +28,14 @@ public:
      */
     HSVInterpolation(const std::string& variable_name, const float& hMin, const float& hMax, const float& s = 1.0f, const float& v = 0.88f);
     /**
+     * Set the bounds to clamp an agent variable to before using for HSV interpolation
+     * @param min_bound The agent variable value that should map to the minimum hue, must be smaller than max_bound
+     * @param max_bound The agent variable value that should map to the maximum hue, must be larger than min_bound
+     * @return Returns itself, so that you can chain the method (otherwise constructor would have too many optional args)
+     * @throws InvalidArgument if min_bound > max_bound
+     */
+    HSVInterpolation &setBounds(const float& min_bound, const float& max_bound);
+    /**
      * Returns a function returning a constant color in the form:
      * vec4 calculateColor() {
      *   return vec4(1.0, 0.0, 0.0, 1.0);
@@ -44,6 +52,11 @@ public:
     std::string getAgentVariableName() const override;
 
 private:
+    /**
+     * Bounds that the agent variable is clamped to
+     * Defaults to [0.0, 1.0]
+     */
+    float min_bound, max_bound;
     /**
      * Hue must be in the inclusive range [0.0, 360.0] 
      */
