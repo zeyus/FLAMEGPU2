@@ -5,10 +5,10 @@
 #include "flamegpu/exception/FGPUException.h"
 
 HSVInterpolation HSVInterpolation::REDGREEN(const std::string& variable_name) {
-  return HSVInterpolation(variable_name, 0.0f, 100.0f, 0.0f);
+  return HSVInterpolation(variable_name, 0.0f, 100.0f, 1.0f, 0.88f);
 }
 HSVInterpolation HSVInterpolation::GREENRED(const std::string& variable_name) {
-    return HSVInterpolation(variable_name, 100.0f, 0.0f, 0.0f);
+    return HSVInterpolation(variable_name, 100.0f, 0.0f, 1.0f, 0.88f);
 }
 
 HSVInterpolation::HSVInterpolation(const std::string &_variable_name, const float& hMin, const float& hMax, const float& s, const float& v)
@@ -17,7 +17,7 @@ HSVInterpolation::HSVInterpolation(const std::string &_variable_name, const floa
     , saturation(s)
     , val(v)
     , variable_name(_variable_name) {
-    if (hue_min < 0.0f || hue_min > 1.0f) {
+    if (hue_min < 0.0f || hue_min > 360.0f) {
         THROW InvalidArgument("%f is not a valid hue value, hue components must be in the inclusive [0.0, 360.0]\n", hue_min);
     }
     if (hue_max < 0.0f || hue_max > 360.0f) {
