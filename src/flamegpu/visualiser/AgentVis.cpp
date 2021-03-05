@@ -2,6 +2,7 @@
 
 #include "flamegpu/gpu/CUDAAgent.h"
 #include "flamegpu/model/AgentData.h"
+#include "flamegpu/visualiser/color/ColorFunction.h"
 #include "FLAMEGPU_Visualisation.h"  // TODO - This should probably be flamegpu_visualiser/FLAMEGPU_Visualisation.h?
 
 AgentVis::AgentVis(CUDAAgent &_agent)
@@ -71,7 +72,7 @@ void AgentVis::initBindings(std::unique_ptr<FLAMEGPU_Visualisation> &vis) {
     for (auto &state : agentData.states) {
         // For each agent state, give the visualiser
         // vis config
-        AgentStateConfig vc = this->defaultConfig;  // Default to parent if child hasn't been configured
+        AgentStateConfig &vc = this->defaultConfig;  // Default to parent if child hasn't been configured
         if (states.find(state) != states.end()) {
             vc = states.at(state).config;
         }
@@ -86,14 +87,19 @@ void AgentVis::requestBufferResizes(std::unique_ptr<FLAMEGPU_Visualisation> &vis
 }
 void AgentVis::updateBuffers(std::unique_ptr<FLAMEGPU_Visualisation> &vis) {
     for (auto &state : agentData.states) {
-        auto &state_map = agent.state_map.at(state);
+        AgentStateConfig &state_config = this->defaultConfig;  // Default to parent if child hasn't been configured
+        if (states.find(state) != states.end()) {
+            state_config = states.at(state).config;
+        }
+        auto& state_data_map = agent.state_map.at(state);
         vis->updateAgentStateBuffer(agentData.name, state,
-            state_map->getSize(),
-            reinterpret_cast<float *>(state_map->getVariablePointer(x_var)),
-            reinterpret_cast<float *>(state_map->getVariablePointer(y_var)),
-            reinterpret_cast<float *>(z_var == "" ? nullptr : state_map->getVariablePointer(z_var)));
+            state_data_map->getSize(),
+            reinterpret_cast<float *>(state_data_map->getVariablePointer(x_var)),
+            reinterpret_cast<float *>(state_data_map->getVariablePointer(y_var)),
+            reinterpret_cast<float *>(z_var.empty() ? nullptr : state_data_map->getVariablePointer(z_var)),
+            reinterpret_cast<float*>(state_config.color_var.empty() ? nullptr : state_data_map->getVariablePointer(state_config.color_var)));
     }
-    // TODO Tertiary buffers? (e.g. color, direction[xyz])
+    // TODO Other buffers? (e.g. direction[xyz])
 }
 
 void AgentVis::setModel(const std::string &modelPath, const std::string &texturePath) {
@@ -149,4 +155,15 @@ void AgentVis::setModelScale(float maxLen) {
             s.second.config.model_scale[0] = -maxLen;
         }
     }
+}
+
+void AgentVis::setColor(const ColorFunction& cf) {
+    defaultConfig.color_var = cf.getAgentVariableName();
+    defaultConfig.color_shader_src = cf.getSrc();
+    defaultConfig.color_var_name = cf.getSamplerName();
+}
+void AgentVis::clearColor() {
+    defaultConfig.color_var = "";
+    defaultConfig.color_shader_src = "";
+    defaultConfig.color_var_name = "";
 }

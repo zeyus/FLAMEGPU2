@@ -7,6 +7,7 @@
 #include "config/AgentStateConfig.h"
 #include "config/Stock.h"
 
+class ColorFunction;
 class AgentVis;
 
 /**
@@ -55,6 +56,14 @@ class AgentStateVis {
      * largest
      */
     void setModelScale(float maxLen);
+    /**
+     * Set a custom colour function
+     */
+    void setColor(const ColorFunction& cf);
+    /**
+     * Disable custom color, e.g. if you're using a textured model
+     */
+    void clearColor();
 
  private:
     /**

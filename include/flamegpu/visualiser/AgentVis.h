@@ -14,6 +14,7 @@
 struct AgentData;
 class CUDAAgent;
 class FLAMEGPU_Visualisation;
+class ColorFunction;
 
 /**
  * This provides an interface for managing the render options for all agents of a specific type
@@ -93,14 +94,14 @@ class AgentVis {
      * @param maxLen World scale of the model's relative to the axis which it is largest
      */
     void setModelScale(float maxLen);
-
     /**
-     * Some shader modes wont want this though, e.g. tex
+     * Set a custom colour function
      */
-    // void setColor(const float &r, const float &g, const float &b) { setColor(glm::vec4(r, g, b, 1.0f)); }
-    // void setColor(const float &r, const float &g, const float &b, const float &a) { setColor(glm::vec4(r, g, b, a)); }
-    // void setColor(const glm::vec3 &rgb) { setColor(glm::vec4(rgb, 1.0f)); }
-    // void setColor(const glm::vec4 &rgba);
+    void setColor(const ColorFunction &cf);
+    /**
+     * Disable custom color, e.g. if you're using a textured model
+     */
+    void clearColor();
 
  private:
     /**
