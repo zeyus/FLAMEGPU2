@@ -33,8 +33,14 @@ public:
      * @param max_bound The agent variable value that should map to the maximum hue, must be larger than min_bound
      * @return Returns itself, so that you can chain the method (otherwise constructor would have too many optional args)
      * @throws InvalidArgument if min_bound > max_bound
+     * @note Defaults to (0.0, 1.0)
      */
     HSVInterpolation &setBounds(const float& min_bound, const float& max_bound);
+    /**
+     * If set to true, hue will interpolate over the 0/360 boundary
+     * If set false, hue will interpolate without wrapping (e.g. if hMax is < hMin), hMin will be assigned to the lower_bound
+     */
+    HSVInterpolation& HSVInterpolation::setWrapHue(const bool& _wrapHue);
     /**
      * Returns a function returning a constant color in the form:
      * vec4 calculateColor() {
@@ -56,7 +62,13 @@ private:
      * Bounds that the agent variable is clamped to
      * Defaults to [0.0, 1.0]
      */
-    float min_bound, max_bound;
+    float min_bound = 0.0f, max_bound = 1.0f;
+    /**
+     * true, causes hue to interpolate over the 0/360 boundary
+     * false, causes min_hue/max_hue to be swapped if max_hue < min_hue
+     * Defaults to false
+     */
+    bool wrap_hue = false;
     /**
      * Hue must be in the inclusive range [0.0, 360.0] 
      */
