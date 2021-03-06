@@ -68,9 +68,9 @@ FLAMEGPU_STEP_FUNCTION(Validation) {
 int main(int argc, const char ** argv) {
     ModelDescription model("Circles_Spatial3D_example");
 
-    const unsigned int AGENT_COUNT = 16384;
-    const float ENV_MAX = static_cast<float>(floor(cbrt(AGENT_COUNT)));
-    const float RADIUS = 2.0f;
+    const unsigned int AGENT_COUNT = 1024;
+    const float ENV_MAX = 2; //static_cast<float>(floor(cbrt(AGENT_COUNT)));
+    const float RADIUS = 0.05f;
     {   // Location message
         MsgSpatial3D::Description &message = model.newMessage<MsgSpatial3D>("location");
         message.newVariable<int>("id");
@@ -84,6 +84,7 @@ int main(int argc, const char ** argv) {
         agent.newVariable<float>("x");
         agent.newVariable<float>("y");
         agent.newVariable<float>("z");
+        agent.newVariable<int>("color");
         agent.newVariable<float>("drift");  // Store the distance moved here, for validation
         agent.newFunction("output_message", output_message).setMessageOutput("location");
         agent.newFunction("move", move).setMessageInput("location");
@@ -131,7 +132,7 @@ int main(int argc, const char ** argv) {
         // Position vars are named x, y, z; so they are used by default
         circ_agt.setModel(Stock::Models::ICOSPHERE);
         circ_agt.setModelScale(1/10.0f);
-        circ_agt.setColor(StaticColor::WHITE);
+        circ_agt.setColor(Stock::Colors::WHITE);
         // Render the Subdivision of spatial messaging
         {
             const float ENV_MIN = 0;
@@ -177,6 +178,7 @@ int main(int argc, const char ** argv) {
             instance.setVariable<float>("x", dist(rng));
             instance.setVariable<float>("y", dist(rng));
             instance.setVariable<float>("z", dist(rng));
+            instance.setVariable<int>("color", i % 8);
         }
         cuda_model.setPopulationData(population);
     }

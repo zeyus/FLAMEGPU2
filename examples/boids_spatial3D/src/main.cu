@@ -384,7 +384,7 @@ int main(int argc, const char ** argv) {
         // Position vars are named x, y, z; so they are used by default
         circ_agt.setModel(Stock::Models::ICOSPHERE);
         circ_agt.setModelScale(env.getProperty<float>("SEPARATION_RADIUS"));
-        circ_agt.setColor(StaticColor::WHITE);
+        circ_agt.setColor(Stock::Colors::WHITE);
     }
     visualisation.activate();
 #endif

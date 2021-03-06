@@ -140,7 +140,7 @@ int main(int argc, const char ** argv) {
         // Position vars are named x, y, z; so they are used by default
         circ_agt.setModel(Stock::Models::ICOSPHERE);
         circ_agt.setModelScale(1/10.0f);
-        circ_agt.setColor(StaticColor::WHITE);
+        circ_agt.setColor(Stock::Colors::WHITE);
     }
     m_vis.activate();
 #endif
