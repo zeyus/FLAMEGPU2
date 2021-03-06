@@ -1,7 +1,7 @@
 #ifndef INCLUDE_FLAMEGPU_VISUALISER_COLOR_PALETTE_DARK2_H_
 #define INCLUDE_FLAMEGPU_VISUALISER_COLOR_PALETTE_DARK2_H_
 
-#include "flamegpu/visualiser/color/StaticColor.h"
+#include "flamegpu/visualiser/color/Color.h"
 #include "flamegpu/exception/FGPUException.h"
 
 /**
@@ -11,7 +11,7 @@
  */
 class Dark2 {
  public:
-    static const StaticColor
+    static const Color
         ELF_GREEN,
         TAWNY,
         RICH_BLUE,
@@ -29,7 +29,7 @@ class Dark2 {
      * Returns the color at the given index
      * @throws OutOfBoundsException If i >= getSize()
      */
-    static StaticColor at(unsigned int i)  {
+    static Color at(unsigned int i)  {
         if (i == 0) return ELF_GREEN;
         if (i == 1) return TAWNY;
         if (i == 2) return RICH_BLUE;

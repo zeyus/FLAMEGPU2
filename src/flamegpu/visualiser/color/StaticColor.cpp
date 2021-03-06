@@ -36,7 +36,7 @@ std::string StaticColor::getSrc() const {
     return ss.str();
 }
 std::array<float, 4> StaticColor::fromHEX(const char *hex) {
-    // Would be nice if this got rid of sscanf, so that it could be constexpr with static asserts.
+    // Would be nice if this got rid of sscanf, so that it could be constexpr
     if (hex[0] == '#') ++hex;
     const size_t hex_len = strlen(hex);
     if (hex_len == 6) {

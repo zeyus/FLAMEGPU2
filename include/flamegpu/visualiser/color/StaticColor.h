@@ -17,7 +17,7 @@ class StaticColor : public ColorFunction {
      static const StaticColor GREEN;
      static const StaticColor BLUE;
     /**
-     * Constructs a static color
+     * Constructs a static colorfunction generator
      * All components must be provided in the inclusive range [0.0, 1.0]
      * @param r Red value
      * @param g Green value
@@ -25,7 +25,8 @@ class StaticColor : public ColorFunction {
      */
     constexpr StaticColor(const float& r, const float& g, const float& b);
     /**
-     * Create a static colour from a 3 or 6 char hexcode
+     * Constructs a static colorfunction generator from a 3 or 6 char hexcode
+     * Optional the hexcode may begin with '#'
      */
     explicit StaticColor(const char *hexcode);
     /**

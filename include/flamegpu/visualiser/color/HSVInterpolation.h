@@ -18,7 +18,7 @@ class HSVInterpolation : public ColorFunction {
      */
     static HSVInterpolation GREENRED(const std::string& variable_name);
     /**
-     * Constructs a static color
+     * Constructs a HSV interpolation function generator
      * All components must be provided in the inclusive range [0.0, 1.0]
      * @param variable_name Name of the agent variable which maps to hue, the variable type must be float
      * @param hMin Hue value when the agent variable is 0.0
@@ -42,10 +42,7 @@ class HSVInterpolation : public ColorFunction {
      */
     HSVInterpolation& HSVInterpolation::setWrapHue(const bool& _wrapHue);
     /**
-     * Returns a function returning a constant color in the form:
-     * vec4 calculateColor() {
-     *   return vec4(1.0, 0.0, 0.0, 1.0);
-     * }
+     * Returns a function that returns a color based on HSV interpolation
      */
     std::string getSrc() const override;
     /**
@@ -53,7 +50,7 @@ class HSVInterpolation : public ColorFunction {
      */
     std::string getSamplerName() const override;
     /**
-     * Always returns "color_arg"
+     * Returns variable_name
      */
     std::string getAgentVariableName() const override;
 

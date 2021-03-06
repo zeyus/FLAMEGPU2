@@ -1,12 +1,12 @@
 #include "flamegpu/visualiser/color/palette/Pastel.h"
 
-const StaticColor Pastel::PALE_CORNFLOWER_BLUE = StaticColor("A1C9F4");
-const StaticColor Pastel::MACARONI_AND_CHEESE = StaticColor("FFB482");
-const StaticColor Pastel::GRANNY_SMITH_APPLE = StaticColor("8DE5A1");
-const StaticColor Pastel::ROSEBUD = StaticColor("FF9F9B");
-const StaticColor Pastel::MAUVE = StaticColor("D0BBFF");
-const StaticColor Pastel::PANCHO = StaticColor("DEBB9B");
-const StaticColor Pastel::LAVENDER_ROSE = StaticColor("FAB0E4");
-const StaticColor Pastel::VERY_LIGHT_GREY = StaticColor("CFCFCF");
-const StaticColor Pastel::CANARY = StaticColor("FFFEA3");
-const StaticColor Pastel::PALE_TURQUOISE = StaticColor("B9F2F0");
+const Color Pastel::PALE_CORNFLOWER_BLUE = Color("A1C9F4");
+const Color Pastel::MACARONI_AND_CHEESE = Color("FFB482");
+const Color Pastel::GRANNY_SMITH_APPLE = Color("8DE5A1");
+const Color Pastel::ROSEBUD = Color("FF9F9B");
+const Color Pastel::MAUVE = Color("D0BBFF");
+const Color Pastel::PANCHO = Color("DEBB9B");
+const Color Pastel::LAVENDER_ROSE = Color("FAB0E4");
+const Color Pastel::VERY_LIGHT_GREY = Color("CFCFCF");
+const Color Pastel::CANARY = Color("FFFEA3");
+const Color Pastel::PALE_TURQUOISE = Color("B9F2F0");

@@ -255,7 +255,9 @@ if (VISUALISATION)
         ${FLAMEGPU_ROOT}/include/flamegpu/visualiser/AgentStateVis.h
         ${FLAMEGPU_ROOT}/include/flamegpu/visualiser/StaticModelVis.h
         ${FLAMEGPU_ROOT}/include/flamegpu/visualiser/LineVis.h
+        ${FLAMEGPU_ROOT}/include/flamegpu/visualiser/color/Color.h
         ${FLAMEGPU_ROOT}/include/flamegpu/visualiser/color/ColorFunction.h
+        ${FLAMEGPU_ROOT}/include/flamegpu/visualiser/color/DiscreteColor.h
         ${FLAMEGPU_ROOT}/include/flamegpu/visualiser/color/StaticColor.h
         ${FLAMEGPU_ROOT}/include/flamegpu/visualiser/color/HSVInterpolation.h
         ${FLAMEGPU_ROOT}/include/flamegpu/visualiser/color/palette/Dark2.h
@@ -268,6 +270,7 @@ if (VISUALISATION)
         ${FLAMEGPU_ROOT}/src/flamegpu/visualiser/AgentStateVis.cpp
         ${FLAMEGPU_ROOT}/src/flamegpu/visualiser/StaticModelVis.cpp
         ${FLAMEGPU_ROOT}/src/flamegpu/visualiser/LineVis.cpp
+        ${FLAMEGPU_ROOT}/src/flamegpu/visualiser/color/DiscreteColor.cpp
         ${FLAMEGPU_ROOT}/src/flamegpu/visualiser/color/StaticColor.cpp
         ${FLAMEGPU_ROOT}/src/flamegpu/visualiser/color/HSVInterpolation.cpp
         ${FLAMEGPU_ROOT}/src/flamegpu/visualiser/color/palette/Dark2.cpp

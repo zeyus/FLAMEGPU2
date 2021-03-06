@@ -1,7 +1,7 @@
 #ifndef INCLUDE_FLAMEGPU_VISUALISER_COLOR_PALETTE_PASTEL_H_
 #define INCLUDE_FLAMEGPU_VISUALISER_COLOR_PALETTE_PASTEL_H_
 
-#include "flamegpu/visualiser/color/StaticColor.h"
+#include "flamegpu/visualiser/color/Color.h"
 #include "flamegpu/exception/FGPUException.h"
 
 /**
@@ -12,7 +12,7 @@
  */
 class Pastel {
  public:
-    static const StaticColor
+    static const Color
         PALE_CORNFLOWER_BLUE,
         MACARONI_AND_CHEESE,
         GRANNY_SMITH_APPLE,
@@ -31,7 +31,7 @@ class Pastel {
      * Returns the color at the given index
      * @throws OutOfBoundsException If i >= getSize()
      */
-    static StaticColor at(unsigned int i)  {
+    static Color at(unsigned int i)  {
         if (i == 0) return PALE_CORNFLOWER_BLUE;
         if (i == 1) return MACARONI_AND_CHEESE;
         if (i == 2) return GRANNY_SMITH_APPLE;
