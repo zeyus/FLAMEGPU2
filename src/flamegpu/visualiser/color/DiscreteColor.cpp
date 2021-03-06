@@ -1,13 +1,30 @@
 #include "flamegpu/visualiser/color/DiscreteColor.h"
 
-#include "flamegpu/visualiser/color/StaticColor.h"
-
+#include "flamegpu/visualiser/color/Palette.h"
 
 template<typename T>
 DiscreteColor<T>::DiscreteColor(const std::string& _variable_name, const Color& _fallback)
     : std::map<T, Color>()
     , fallback(_fallback)
     , variable_name(_variable_name) { }
+template<typename T>
+DiscreteColor<T>::DiscreteColor(const std::string& _variable_name, const Palette& palette, const Color& _fallback, T offset, T stride)
+    : DiscreteColor(_variable_name, _fallback) {
+    // Construct map from palette
+    for (const auto& i : palette) {
+        this->insert(offset, i);
+        offset += stride;
+    }
+}
+template<typename T>
+DiscreteColor<T>::DiscreteColor(const std::string& _variable_name, const Palette& palette, T offset, T stride)
+    : DiscreteColor(_variable_name, palette.colors().back()) {
+      // Construct map from palette
+      for (size_t i = 0; i < palette.size() - 1; ++i) {
+          this->insert(offset, palette[i]);
+          offset += stride;
+      }
+}
 
 template<typename T>
 std::string DiscreteColor<T>::getSamplerName() const {

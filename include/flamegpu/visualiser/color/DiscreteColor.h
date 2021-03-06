@@ -3,14 +3,14 @@
 
 #include <map>
 #include <string>
-#include <array>
-
 
 #include <sstream>
 
 #include "flamegpu/exception/FGPUException.h"
 #include "flamegpu/visualiser/color/ColorFunction.h"
 #include "flamegpu/visualiser/color/Color.h"
+
+class Palette;
 
 /**
  * Used to define a discrete color selection function
@@ -21,23 +21,35 @@ template<typename T = int32_t>
 class DiscreteColor : public ColorFunction, public std::map<T, Color> {
  public:
     /**
-     * Constructs a static color
-     * All components must be provided in the inclusive range [0.0, 1.0]
-     * @param variable_name Name of the agent variable which maps to hue, the variable type must be float
+     * Constructs a discrete color function generator
+     * @param variable_name Name of the agent variable which provides the integer key
      * @param fallback Color that is returned when the provided integer is not found within the map
      */
     DiscreteColor(const std::string& variable_name, const Color &fallback);
 
     /**
-     * From Palette, todo
+     * Constructs a discrete color function generator from a palette
+     * @param variable_name Name of the agent variable which provides the integer key
+     * @param palette The colors to use
+     * @param fallback The color to return when they lookup doesn't have a matching int
+     * @param offset The key to map to the first palette color
+     * @param stride The value to added to every subsequent key
+     * @see DiscreteColor(const std::string&, const Palette&, T, T);
      */
-    // DiscreteColor(const Palette& palette, int offset = 0);
+    DiscreteColor(const std::string& variable_name, const Palette& palette, const Color& fallback, T offset = 0, T stride = 1);
+    /**
+     * Constructs a discrete color function generator from a palette
+     * This version maps the final colour of the palette to the fallback, rather than an integer key
+     * @param variable_name Name of the agent variable which provides the integer key
+     * @param palette The colors to use
+     * @param offset The key to map to the first palette color
+     * @param stride The value to added to every subsequent key
+     * @see DiscreteColor(const std::string&, const Palette&, const Color&, T, T);
+     */
+    DiscreteColor(const std::string& variable_name, const Palette& palette, T offset = 0, T stride = 1);
 
     /**
-     * Returns a function returning a constant color in the form:
-     * vec4 calculateColor() {
-     *   return vec4(1.0, 0.0, 0.0, 1.0);
-     * }
+     * Returns a function containing a switch statement through the entries of the map:
      */
     std::string getSrc() const override;
     /**

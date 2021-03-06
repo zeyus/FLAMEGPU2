@@ -7,6 +7,7 @@
 #include "flamegpu/visualiser/color/Color.h"
 
 struct Palette {
+    enum Category{ Qualitative, Sequential, Diverging };
     class const_iterator : public std::iterator<std::input_iterator_tag, const Color> {
         const Palette& palette;
         difference_type pos;
@@ -35,16 +36,86 @@ struct Palette {
         return true;
     }
     virtual const std::vector<Color>& colors() const = 0;
+    virtual bool getColorBlindFriendly() const = 0;
+    virtual Category getCategory() const = 0;
 };
+
 
 namespace Stock {
 namespace Palette {
+/**
+ * Qualitative palette
+ * Set1 from Colorbrewer
+ */
+struct Set1 : Palette {
+    Category getCategory() const override { return Qualitative; }
+    bool getColorBlindFriendly() const override { return false; }
+    const std::vector<Color>& colors() const override {
+        static auto colors = std::vector<Color>{
+            Color("E41A1C"),
+            Color("377EB8"),
+            Color("4DAF4A"),
+            Color("984EA3"),
+            Color("FF7F00"),
+            Color("FFFF33"),
+            Color("A65628"),
+            Color("F781BF"),
+            Color("999999"),
+        };
+        return colors;
+    }
+    enum Name {
+        RED,
+        BLUE,
+        GREEN,
+        PURPLE,
+        ORANGE,
+        YELLOW,
+        BROWN,
+        PINK,
+        GREY
+    };
+};
+/**
+ * Color blind friendly qualitative palette
+ * Set2 from Colorbrewer
+ * @note Color names are approximations using https://www.color-blindness.com/color-name-hue/
+ */
+struct Set2 : Palette {
+    Category getCategory() const override { return Qualitative; }
+    bool getColorBlindFriendly() const override { return true; }
+    const std::vector<Color>& colors() const override {
+        static auto colors = std::vector<Color>{
+            Color("66C2A5"),
+            Color("FC8D62"),
+            Color("8DA0CB"),
+            Color("E78AC3"),
+            Color("A6D854"),
+            Color("FFD92F"),
+            Color("E5C494"),
+            Color("B3B3B3"),
+        };
+        return colors;
+    }
+    enum Name {
+        PUERTO_RICO,
+        ATOMIC_TANGERINE,
+        POLO_BLUE,
+        SHOCKING,
+        CONIFER,
+        SUNGLOW,
+        CHAMOIS,
+        DARK_GREY,
+    };
+};
 /**
  * Color blind friendly qualitative palette
  * Dark2 from Colorbrewer
  * @note Color names are approximations using https://www.color-blindness.com/color-name-hue/
  */
 struct Dark2 : Palette {
+    Category getCategory() const override { return Qualitative; }
+    bool getColorBlindFriendly() const override { return true; }
     const std::vector<Color>& colors() const override {
         static auto colors = std::vector<Color>{
             Color("1D8F64"),
@@ -76,6 +147,8 @@ struct Dark2 : Palette {
  * @note Color names are approximations using https://www.color-blindness.com/color-name-hue/
  */
 struct Pastel : Palette {
+    Category getCategory() const override { return Qualitative; }
+    bool getColorBlindFriendly() const override { return false; }
     const std::vector<Color>& colors() const override {
         static auto colors = std::vector<Color>{
             Color("A1C9F4"),
@@ -107,6 +180,8 @@ struct Pastel : Palette {
 /**
  * Qualitative Instances
  */
+static const Set1 SET1;
+static const Set2 SET2;
 static const Dark2 DARK2;
 static const Pastel PASTEL;
 /**

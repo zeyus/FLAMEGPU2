@@ -6,6 +6,7 @@
 
 #include "flamegpu/exception/FGPUException.h"
 
+class StaticColor;
 /**
  * Store for a floating point rgba color
  * Each component should be in the inclusive range [0, 1]
@@ -98,6 +99,20 @@ struct Color {
     bool operator!=(const Color& other) const {
         return !(*this == other);
     }
+    /**
+     * Defined in StaticColor.cpp
+     */
+    operator StaticColor() const;
 };
+
+namespace Stock {
+namespace Colors {
+static const Color BLACK = Color{0.0f, 0.0f, 0.0f};
+static const Color WHITE = Color{1.0f, 1.0f, 1.0f};
+static const Color RED =   Color{1.0f, 0.0f, 0.0f};
+static const Color GREEN = Color{0.0f, 1.0f, 0.0f};
+static const Color BLUE =  Color{0.0f, 0.0f, 1.0f};
+}  // namespace Colors
+}  // namespace Stock
 
 #endif  // INCLUDE_FLAMEGPU_VISUALISER_COLOR_COLOR_H_

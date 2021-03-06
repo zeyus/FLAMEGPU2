@@ -5,6 +5,7 @@
 #include <string>
 
 #include "flamegpu/visualiser/color/ColorFunction.h"
+#include "flamegpu/visualiser/color/Color.h"
 
 /**
  * Creates a color function returning a static color
@@ -17,18 +18,11 @@ class StaticColor : public ColorFunction {
      static const StaticColor GREEN;
      static const StaticColor BLUE;
     /**
-     * Constructs a static colorfunction generator
+     * Constructs a static color function generator
      * All components must be provided in the inclusive range [0.0, 1.0]
-     * @param r Red value
-     * @param g Green value
-     * @param b Blue value
+     * @param rgba Color to represent
      */
-    constexpr StaticColor(const float& r, const float& g, const float& b);
-    /**
-     * Constructs a static colorfunction generator from a 3 or 6 char hexcode
-     * Optional the hexcode may begin with '#'
-     */
-    explicit StaticColor(const char *hexcode);
+    explicit constexpr StaticColor(const Color &rgba);
     /**
      * Returns a function returning a constant color in the form:
      * vec4 calculateColor() {
@@ -38,11 +32,10 @@ class StaticColor : public ColorFunction {
     std::string getSrc() const override;
 
  private:
-    std::array<float, 4> fromHEX(const char hex[3]);
     /**
      * Shader controls RGBA values, but currently we only expose RGB (A support is somewhat untested)
      */
-    const std::array<float, 4> rgba;
+    Color rgba;
 };
 
 #endif  // INCLUDE_FLAMEGPU_VISUALISER_COLOR_STATICCOLOR_H_
