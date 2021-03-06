@@ -10,7 +10,7 @@
 #include "flamegpu/visualiser/color/ColorFunction.h"
 #include "flamegpu/visualiser/color/Color.h"
 
-class Palette;
+struct Palette;
 
 /**
  * Used to define a discrete color selection function

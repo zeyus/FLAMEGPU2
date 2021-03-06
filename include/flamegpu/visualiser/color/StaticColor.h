@@ -9,20 +9,16 @@
 
 /**
  * Creates a color function returning a static color
+ * You probably don't need to use this class directly, instance of Color are implicitly converted to a StaticColor
  */
 class StaticColor : public ColorFunction {
  public:
-     static const StaticColor BLACK;
-     static const StaticColor WHITE;
-     static const StaticColor RED;
-     static const StaticColor GREEN;
-     static const StaticColor BLUE;
     /**
      * Constructs a static color function generator
      * All components must be provided in the inclusive range [0.0, 1.0]
      * @param rgba Color to represent
      */
-    explicit constexpr StaticColor(const Color &rgba);
+    explicit StaticColor(const Color &rgba);
     /**
      * Returns a function returning a constant color in the form:
      * vec4 calculateColor() {

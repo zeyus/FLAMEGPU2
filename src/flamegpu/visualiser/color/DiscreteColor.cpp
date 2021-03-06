@@ -12,18 +12,18 @@ DiscreteColor<T>::DiscreteColor(const std::string& _variable_name, const Palette
     : DiscreteColor(_variable_name, _fallback) {
     // Construct map from palette
     for (const auto& i : palette) {
-        this->insert(offset, i);
+        this->emplace(offset, i);
         offset += stride;
     }
 }
 template<typename T>
 DiscreteColor<T>::DiscreteColor(const std::string& _variable_name, const Palette& palette, T offset, T stride)
     : DiscreteColor(_variable_name, palette.colors().back()) {
-      // Construct map from palette
-      for (size_t i = 0; i < palette.size() - 1; ++i) {
-          this->insert(offset, palette[i]);
-          offset += stride;
-      }
+    // Construct map from palette
+    for (size_t i = 0; i < palette.size() - 1; ++i) {
+        this->emplace(offset, palette[i]);
+        offset += stride;
+    }
 }
 
 template<typename T>

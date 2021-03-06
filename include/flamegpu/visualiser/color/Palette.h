@@ -42,7 +42,7 @@ struct Palette {
 
 
 namespace Stock {
-namespace Palette {
+namespace Palettes {
 /**
  * Qualitative palette
  * Set1 from Colorbrewer

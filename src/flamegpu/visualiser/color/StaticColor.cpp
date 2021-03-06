@@ -4,7 +4,7 @@
 
 #include "flamegpu/exception/FGPUException.h"
 
-constexpr StaticColor::StaticColor(const Color& _rgba)
+StaticColor::StaticColor(const Color& _rgba)
     : rgba(_rgba) {
     if (!rgba.validate()) {
         THROW InvalidArgument("Provided color has invalid components, "
@@ -20,5 +20,5 @@ std::string StaticColor::getSrc() const {
 }
 
 Color::operator StaticColor() const {
-    return {*this};
+    return StaticColor{*this};
 }
