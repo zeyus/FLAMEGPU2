@@ -87,6 +87,17 @@ struct Color {
                 return false;
         return true;
     }
+    bool operator==(const Color &other) const {
+        if (r != other.r ||
+            g != other.g ||
+            b != other.b ||
+            a != other.a)
+                return false;
+        return true;
+    }
+    bool operator!=(const Color& other) const {
+        return !(*this == other);
+    }
 };
 
 #endif  // INCLUDE_FLAMEGPU_VISUALISER_COLOR_COLOR_H_

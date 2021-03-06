@@ -21,18 +21,6 @@ template<typename T = int32_t>
 class DiscreteColor : public ColorFunction, public std::map<T, Color> {
  public:
     /**
-     * Dark2 color palette
-     * @param variable_name float agent variable to map to the color
-     * @param offset Index of first color, defaults to 0
-     */
-    static DiscreteColor Dark2(const std::string& variable_name, T offset = 0);
-    /**
-     * Pastel color palette
-     * @param variable_name float agent variable to map to the color
-     * @param offset Index of first color, defaults to 0
-     */
-    static DiscreteColor Pastel(const std::string& variable_name, T offset = 0);
-    /**
      * Constructs a static color
      * All components must be provided in the inclusive range [0.0, 1.0]
      * @param variable_name Name of the agent variable which maps to hue, the variable type must be float
