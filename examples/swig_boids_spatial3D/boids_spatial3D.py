@@ -410,7 +410,7 @@ if pyflamegpu.VISUALISATION:
     # Position vars are named x, y, z; so they are used by default
     circ_agt.setModel(pyflamegpu.ICOSPHERE);
     circ_agt.setModelScale(env.getPropertyFloat("SEPARATION_RADIUS") * 10);
-    circ_agt.setColor(pyflamegpu.WHITE);
+    circ_agt.setColor(pyflamegpu.colors.RED);
     visualisation.activate();
 
 """
