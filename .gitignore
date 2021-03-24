@@ -36,7 +36,7 @@ build*/
 .layout
 
 # CUDA
-*.i
+# *.i #.i is the swig definition file type
 *.ii
 *.gpu
 *.ptx
