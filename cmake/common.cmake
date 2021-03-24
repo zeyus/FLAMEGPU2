@@ -455,7 +455,6 @@ function(add_flamegpu_library NAME SRC FLAMEGPU_ROOT)
 
     # enable "fpic" for linux to allow shared libraries to be build from the static library (required for swig)
     set_property(TARGET ${NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
-    set_property(TARGET ${NAME} PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
     
     # Activate visualisation if requested
     if (VISUALISATION)
@@ -485,6 +484,7 @@ function(add_flamegpu_library NAME SRC FLAMEGPU_ROOT)
     
     # Enable RDC
     set_property(TARGET ${NAME}  PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+    set_property(TARGET ${NAME} PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 
     # Link against dependency targets / directories.
 
