@@ -88,6 +88,8 @@ endif()
 # Control target CUDA_ARCH to compile for
 SET(CUDA_ARCH "${CUDA_ARCH}" CACHE STRING "List of CUDA Architectures to target. E.g. 61;70" FORCE)
 
+option(USE_LTO "Use nvcc LTO if available" OFF)
+
 # Enable the CXX compiler required for feature detection.
 enable_language(CXX)
 

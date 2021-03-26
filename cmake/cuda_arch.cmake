@@ -1,6 +1,5 @@
 # Build a list of gencode arguments, based on CUDA verison.
 # Accepts user override via CUDA_ARCH
-
 # CMAKE > 3.18 introduces CUDA_ARCHITECTURES as a cmake-native way of generating gencodes (Policy CMP0104). Set the value to OFF to prevent errors for it being not provided.
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.18")
     set(CMAKE_CUDA_ARCHITECTURES "OFF")
@@ -66,6 +65,8 @@ if(CUDA_ARCH_LENGTH EQUAL 0)
     set(CUDA_ARCH ${DEFAULT_CUDA_ARCH})
 endif()
 
+# @todo - LTO needs to be disabled if nvcc is too old.
+
 # Propagate the validated values to the parent scope, to reduce warning duplication.
 get_directory_property(hasParent PARENT_DIRECTORY)
 if(hasParent)
@@ -81,28 +82,36 @@ if(NOT CUDA_ARCH_LENGTH EQUAL 0)
             set(CUDA_ARCH_APPLIED "${CUDA_ARCH}" PARENT_SCOPE )
         endif()
     endif()
-    set(GENCODES_FLAGS)
     set(MIN_CUDA_ARCH)
     # Convert to gencode arguments
 
     foreach(ARCH IN LISTS CUDA_ARCH)
-        set(GENCODES_FLAGS "${GENCODES_FLAGS} -gencode arch=compute_${ARCH},code=sm_${ARCH}")
+	if(USE_LTO)
+          add_compile_options("$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-gencode arch=compute_${ARCH}$<COMMA>code=lto_${ARCH}>")
+        else()
+          add_compile_options("$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-gencode arch=compute_${ARCH}$<COMMA>code=sm_${ARCH}>")
+          add_link_options("$<DEVICE_LINK:SHELL:-gencode arch=compute_${ARCH}$<COMMA>code=sm_${ARCH}>")
+        endif()
     endforeach()
 
     # Add the last arch again as compute_, compute_ to enable forward looking JIT
     list(GET CUDA_ARCH -1 LAST_ARCH)
-    set(GENCODES_FLAGS "${GENCODES_FLAGS} -gencode arch=compute_${LAST_ARCH},code=compute_${LAST_ARCH}")
+    add_compile_options("$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-gencode arch=compute_${LAST_ARCH}$<COMMA>code=compute_${LAST_ARCH}>")
+
+    # LTO doesn't (yet) support JIT and executables must link against a single architecture. I.e. USE_LTO should only be supported if  CUDA 11.2+ and CUDA_ARCH has a length of 1?
+    # The docs and blog post seem to disagree on this point
+    if(USE_LTO)
+#      add_link_options("$<DEVICE_LINK:SHELL:-dlto>")
+    else()
+      add_link_options("$<DEVICE_LINK:SHELL:-gencode arch=compute_${LAST_ARCH}$<COMMA>code=compute_${LAST_ARCH}>")
+    endif()
+    #add_link_options("$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-gencode arch=compute_${LAST_ARCH},code=compute_${LAST_ARCH}>")
 
     # Get the minimum device architecture to pass through to nvcc to enable graceful failure prior to cuda execution.
     list(GET CUDA_ARCH 0 MIN_CUDA_ARCH)
 
-    # Set the gencode flags on NVCC
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} ${GENCODES_FLAGS}")
-
     # Set the minimum arch flags for all compilers
-    set(CMAKE_CC_FLAGS "${CMAKE_C_FLAGS} -DMIN_CUDA_ARCH=${MIN_CUDA_ARCH}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMIN_CUDA_ARCH=${MIN_CUDA_ARCH}")
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -DMIN_CUDA_ARCH=${MIN_CUDA_ARCH}")
+    add_definitions(-DMIN_CUDA_ARCH=${MIN_CUDA_ARCH})
 else()
     message(STATUS "Generating default CUDA Compute Capabilities ${CUDA_ARCH}")
 endif()
