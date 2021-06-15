@@ -22,6 +22,7 @@
 #include "flamegpu/gpu/CUDAMessage.h"
 #include "flamegpu/sim/LoggingConfig.h"
 #include "flamegpu/sim/LogFrame.h"
+#include "flamegpu/util/occupancy.cuh"
 #ifdef VISUALISATION
 #include "FLAMEGPU_Visualisation.h"
 #endif
@@ -684,6 +685,10 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
             if (func_des->func) {   // compile time specified agent function launch
                 // calculate the grid block size for main agent function
                 cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, func_des->func, 0, state_list_size);
+                int minGridSize2, blockSize2;
+                cudaOccupancyMinPotentialBlockSize(&minGridSize2, &blockSize2, func_des->func, 0, state_list_size);
+                printf("Max block size: %d, max min grid size: %d\n", blockSize, minGridSize);
+                printf("Min block size: %d, min min grid size: %d\n", blockSize2, minGridSize2);
                 //! Round up according to CUDAAgent state list size
                 gridSize = (state_list_size + blockSize - 1) / blockSize;
 
@@ -711,6 +716,10 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
                 // calculate the grid block size for main agent function
                 CUfunction cu_func = (CUfunction)instance;
                 cuOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, cu_func, 0, 0, state_list_size);
+                // int minGridSize2, blockSize2;
+                // cuOccupancyMinPotentialBlockSize(&minGridSize2, &blockSize2, cu_func, 0, state_list_size);
+                // printf("Max block size: %d, max min grid size: %d\n", blockSize, minGridSize);
+                // printf("Min block size: %d, min min grid size: %d\n", blockSize2, minGridSize2);
                 //! Round up according to CUDAAgent state list size
                 gridSize = (state_list_size + blockSize - 1) / blockSize;
                 // launch the kernel

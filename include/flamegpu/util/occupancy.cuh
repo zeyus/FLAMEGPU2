@@ -33,7 +33,7 @@ static __inline__ __host__ CUDART_DEVICE cudaError_t cudaOccupancyMinPotentialBl
     int granularity;
 
     // Recorded maximum
-    int maxBlockSize = 0;
+    int minBlockSize = 0;
     int numBlocks = 0;
     int maxOccupancy = 0;
 
@@ -109,11 +109,11 @@ static __inline__ __host__ CUDART_DEVICE cudaError_t cudaOccupancyMinPotentialBl
     granularity = warpSize;
 
     if (blockSizeLimit == 0) {
-        blockSizeLimit = devMaxThreadsPerBlock;
+        blockSizeLimit = 64;  // Smallest block size ever worth using
     }
 
     if (devMaxThreadsPerBlock < blockSizeLimit) {
-        blockSizeLimit = devMaxThreadsPerBlock;
+         blockSizeLimit = devMaxThreadsPerBlock;
     }
 
     if (funcMaxThreadsPerBlock < blockSizeLimit) {
@@ -122,16 +122,16 @@ static __inline__ __host__ CUDART_DEVICE cudaError_t cudaOccupancyMinPotentialBl
 
     blockSizeLimitAligned = ((blockSizeLimit + (granularity - 1)) / granularity) * granularity;
 
-    for (blockSizeToTryAligned = blockSizeLimitAligned; blockSizeToTryAligned > 0; blockSizeToTryAligned -= granularity) {
+    for (blockSizeToTryAligned = blockSizeLimitAligned; blockSizeToTryAligned > 0; blockSizeToTryAligned += granularity) {
         // This is needed for the first iteration, because
         // blockSizeLimitAligned could be greater than blockSizeLimit
         //
-        if (blockSizeLimit < blockSizeToTryAligned) {
-            blockSizeToTry = blockSizeLimit;
-        }
-        else {
+        // if (blockSizeLimit < blockSizeToTryAligned) {
+        //     blockSizeToTry = blockSizeLimit;
+        // }
+        // else {
             blockSizeToTry = blockSizeToTryAligned;
-        }
+        // }
 
         dynamicSMemSize = blockSizeToDynamicSMemSize(blockSizeToTry);
 
@@ -149,7 +149,7 @@ static __inline__ __host__ CUDART_DEVICE cudaError_t cudaOccupancyMinPotentialBl
         occupancyInThreads = blockSizeToTry * occupancyInBlocks;
 
         if (occupancyInThreads > maxOccupancy) {
-            maxBlockSize = blockSizeToTry;
+            minBlockSize = blockSizeToTry;
             numBlocks = occupancyInBlocks;
             maxOccupancy = occupancyInThreads;
         }
@@ -168,8 +168,7 @@ static __inline__ __host__ CUDART_DEVICE cudaError_t cudaOccupancyMinPotentialBl
     // Suggested min grid size to achieve a full machine launch
     //
     *minGridSize = numBlocks * multiProcessorCount;
-    *blockSize = maxBlockSize;
-
+    *blockSize = minBlockSize;
     return status;
 }
 template<class T>
