@@ -5,6 +5,12 @@
 
 #include "flamegpu/flame_api.h"
 
+struct MsgData {
+    unsigned int id;
+    float x,y,z;
+    float fx, fy, fz;
+};
+
 /**
  * FLAME GPU 2 implementation of the Boids model, using spatial3D messaging.
  * This is based on the FLAME GPU 1 implementation, but with dynamic generation of agents. 
@@ -116,14 +122,19 @@ FLAMEGPU_HOST_DEVICE_FUNCTION void clampPosition(float &x, float &y, float &z, c
  * outputdata agent function for Boid agents, which outputs publicly visible properties to a message list
  */
 FLAMEGPU_AGENT_FUNCTION(outputdata, MsgNone, MsgSpatial3D) {
+    MsgData d;
+    d.id = FLAMEGPU->getID();
+    d.x = FLAMEGPU->getVariable<float>("x");
+    d.y = FLAMEGPU->getVariable<float>("y");
+    d.z = FLAMEGPU->getVariable<float>("z");
+    d.fx = FLAMEGPU->getVariable<float>("fx");
+    d.fy = FLAMEGPU->getVariable<float>("fy");
+    d.fz = FLAMEGPU->getVariable<float>("fz");
     // Output each agents publicly visible properties.
-    FLAMEGPU->message_out.setVariable<id_t>("id", FLAMEGPU->getID());
     FLAMEGPU->message_out.setVariable<float>("x", FLAMEGPU->getVariable<float>("x"));
     FLAMEGPU->message_out.setVariable<float>("y", FLAMEGPU->getVariable<float>("y"));
     FLAMEGPU->message_out.setVariable<float>("z", FLAMEGPU->getVariable<float>("z"));
-    FLAMEGPU->message_out.setVariable<float>("fx", FLAMEGPU->getVariable<float>("fx"));
-    FLAMEGPU->message_out.setVariable<float>("fy", FLAMEGPU->getVariable<float>("fy"));
-    FLAMEGPU->message_out.setVariable<float>("fz", FLAMEGPU->getVariable<float>("fz"));
+    FLAMEGPU->message_out.setVariable<MsgData>("data", d);
     return ALIVE;
 }
 /**
@@ -162,36 +173,29 @@ FLAMEGPU_AGENT_FUNCTION(inputdata, MsgSpatial3D, MsgNone) {
     const float SEPARATION_RADIUS = FLAMEGPU->environment.getProperty<float>("SEPARATION_RADIUS");
     // Iterate location messages, accumulating relevant data and counts.
     for (const auto &message : FLAMEGPU->message_in(agent_x, agent_y, agent_z)) {
+        const MsgData msg = message.getVariable<MsgData>("data");
         // Ignore self messages.
-        if (message.getVariable<id_t>("id") != id) {
-            // Get the message location and velocity.
-            const float message_x = message.getVariable<float>("x");
-            const float message_y = message.getVariable<float>("y");
-            const float message_z = message.getVariable<float>("z");
-            const float message_fx = message.getVariable<float>("fx");
-            const float message_fy = message.getVariable<float>("fy");
-            const float message_fz = message.getVariable<float>("fz");
-
+        if (msg.id != id) {
             // Check interaction radius
-            float separation = vec3Length(agent_x - message_x, agent_y - message_y, agent_z - message_z);
+            float separation = vec3Length(agent_x - msg.x, agent_y - msg.y, agent_z - msg.z);
 
             if (separation < (INTERACTION_RADIUS)) {
                 // Update the percieved centre
-                perceived_centre_x += message_x;
-                perceived_centre_y += message_y;
-                perceived_centre_z += message_z;
+                perceived_centre_x += msg.x;
+                perceived_centre_y += msg.y;
+                perceived_centre_z += msg.z;
                 perceived_count++;
 
                 // Update percieved velocity matching
-                global_velocity_x += message_fx;
-                global_velocity_y += message_fy;
-                global_velocity_z += message_fz;
+                global_velocity_x += msg.fx;
+                global_velocity_y += msg.fy;
+                global_velocity_z += msg.fz;
 
                 // Update collision centre
                 if (separation < (SEPARATION_RADIUS)) {  // dependant on model size
-                    collision_centre_x += message_x;
-                    collision_centre_y += message_y;
-                    collision_centre_z += message_z;
+                    collision_centre_x += msg.x;
+                    collision_centre_y += msg.y;
+                    collision_centre_z += msg.z;
                     collision_count += 1;
                 }
             }
@@ -329,14 +333,8 @@ int main(int argc, const char ** argv) {
         message.setMax(env.getProperty<float>("MAX_POSITION"), env.getProperty<float>("MAX_POSITION"), env.getProperty<float>("MAX_POSITION"));
 
         // A message to hold the location of an agent.
-        message.newVariable<int>("id");
         // X Y Z are implicit.
-        // message.newVariable<float>("x");
-        // message.newVariable<float>("y");
-        // message.newVariable<float>("z");
-        message.newVariable<float>("fx");
-        message.newVariable<float>("fy");
-        message.newVariable<float>("fz");
+        message.newVariable<MsgData>("data");
     }
     {   // Boid agent
         AgentDescription &agent = model.newAgent("Boid");
