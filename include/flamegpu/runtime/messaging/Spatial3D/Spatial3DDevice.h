@@ -30,13 +30,6 @@ class MsgSpatial3D::In {
              */
             const Filter &_parent;
             /**
-             * Relative strip within the Moore neighbourhood
-             * Strips run along the x axis
-             * relative_cell[0] corresponds to y offset
-             * relative_cell[1] corresponds to z offset
-             */
-            int relative_cell[2] = { -2, 1 };
-            /**
              * This is the index after the final message, relative to the full message list, in the current bin
              */
             int cell_index_max = 0;
@@ -44,13 +37,20 @@ class MsgSpatial3D::In {
              * This is the index of the currently accessed message, relative to the full message list
              */
             int cell_index = 0;
+            /**
+             * Relative strip within the Moore neighbourhood
+             * Strips run along the x axis
+             * relative_cell[0] corresponds to y offset
+             * relative_cell[1] corresponds to z offset
+             */
+            signed char relative_cell[2] = { -2, 1 };
 
          public:
             /**
              * Constructs a message and directly initialises all of it's member variables
              * @note See member variable documentation for their purposes
              */
-            __device__ Message(const Filter &parent, const int &relative_cell_y, const int &relative_cell_z, const int &_cell_index_max, const int &_cell_index)
+            __device__ Message(const Filter &parent, const signed char &relative_cell_y, const signed char &relative_cell_z, const int &_cell_index_max, const int &_cell_index)
                 : _parent(parent)
                 , cell_index_max(_cell_index_max)
                 , cell_index(_cell_index) {
@@ -126,7 +126,7 @@ class MsgSpatial3D::In {
              * This iterator is constructed by MsgSpatial3D::In::Filter::begin()(float, float, float)
              * @see MsgSpatial3D::In::Operator()(float, float, float)
              */
-            __device__ iterator(const Filter &parent, const int &relative_cell_y, const int &relative_cell_z, const int &_cell_index_max, const int &_cell_index)
+            __device__ iterator(const Filter &parent, const signed char &relative_cell_y, const signed char &relative_cell_z, const int &_cell_index_max, const int &_cell_index)
                 : _message(parent, relative_cell_y, relative_cell_z, _cell_index_max, _cell_index) {
                 // Increment to find first message
                 ++_message;
@@ -197,10 +197,6 @@ class MsgSpatial3D::In {
         }
 
      private:
-        /**
-         * Search origin
-         */
-        float loc[3];
         /**
          * Search origin's grid cell
          */
@@ -343,9 +339,6 @@ __device__ inline void MsgSpatial3D::Out::setLocation(const float &x, const floa
 __device__ inline MsgSpatial3D::In::Filter::Filter(const MetaData* _metadata, const Curve::NamespaceHash &_combined_hash, const float& x, const float& y, const float& z)
     : metadata(_metadata)
     , combined_hash(_combined_hash) {
-    loc[0] = x;
-    loc[1] = y;
-    loc[2] = z;
     cell = getGridPosition3D(_metadata, x, y, z);
 }
 __device__ inline MsgSpatial3D::In::Filter::Message& MsgSpatial3D::In::Filter::Message::operator++() {
