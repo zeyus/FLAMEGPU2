@@ -96,14 +96,18 @@ if(NOT CUDA_ARCH_LENGTH EQUAL 0)
 
     # Add the last arch again as compute_, compute_ to enable forward looking JIT
     list(GET CUDA_ARCH -1 LAST_ARCH)
-    add_compile_options("$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-gencode arch=compute_${LAST_ARCH}$<COMMA>code=compute_${LAST_ARCH}>")
-
+    
     # LTO doesn't (yet) support JIT and executables must link against a single architecture. I.e. USE_LTO should only be supported if  CUDA 11.2+ and CUDA_ARCH has a length of 1?
     # The docs and blog post seem to disagree on this point
     if(USE_LTO)
-#      add_link_options("$<DEVICE_LINK:SHELL:-dlto>")
+        # From the docs: 
+        # > If you want to compile using -gencode to build for multiple arch, use -dc -gencode arch=compute_NN,code=lto_NN to specify the intermediate IR to be stored (where NN is the SM architecture version). Then use -dlto option to link for a specific architecture. There is no JIT support for LTO codes so you need to statically link to a final sm_NN architecture.
+        # Not sure what the point of building for multiple arches is if you have to then link to a single one.
+        add_link_options("$<DEVICE_LINK:SHELL:-dlto -arch=sm_${LAST_ARCH}>")
     else()
-      add_link_options("$<DEVICE_LINK:SHELL:-gencode arch=compute_${LAST_ARCH}$<COMMA>code=compute_${LAST_ARCH}>")
+        # Currently only adding the last arch when not LTOing. 
+        add_compile_options("$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-gencode arch=compute_${LAST_ARCH}$<COMMA>code=compute_${LAST_ARCH}>")
+        add_link_options("$<DEVICE_LINK:SHELL:-gencode arch=compute_${LAST_ARCH}$<COMMA>code=compute_${LAST_ARCH}>")
     endif()
     #add_link_options("$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-gencode arch=compute_${LAST_ARCH},code=compute_${LAST_ARCH}>")
 
