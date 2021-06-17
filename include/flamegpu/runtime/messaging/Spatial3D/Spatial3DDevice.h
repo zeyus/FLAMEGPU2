@@ -291,7 +291,7 @@ __device__ T MsgSpatial3D::In::Filter::Message::getVariable(const char(&variable
     // Ensure that the message is within bounds.
     if (relative_cell[0] >= 2) {
         DTHROW("MsgSpatial3D in invalid bin, unable to get variable '%s'.\n", variable_name);
-        return static_cast<T>(0);
+        return {};
     }
 #endif
     // get the value from curve using the stored hashes and message index.

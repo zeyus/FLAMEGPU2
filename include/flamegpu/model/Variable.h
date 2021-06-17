@@ -34,8 +34,8 @@ struct Variable {
         assert(_elements > 0);  // This should be enforced with static_assert where Variable's are defined, see MessageDescription::newVariable()
         // Limited to Arithmetic types
         // Compound types would allow host pointers inside structs to be passed
-        static_assert(std::is_arithmetic<T>::value || std::is_enum<T>::value,
-            "Only arithmetic types can be used");
+        //static_assert(std::is_arithmetic<T>::value || std::is_enum<T>::value,
+        //    "Only arithmetic types can be used");
     }
     /**
       * Constructs a new variable

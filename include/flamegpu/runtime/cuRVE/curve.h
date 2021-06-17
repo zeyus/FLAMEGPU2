@@ -810,7 +810,7 @@ __device__ __forceinline__ T Curve::getVariableByHash(const VariableHash variabl
     // error checking
     if (size != sizeof(T)) {
         curve_internal::d_curve_error = DEVICE_ERROR_UNKNOWN_TYPE;
-        return 0;
+        return {};
     }
 #endif
     // get a pointer to the specific variable by offsetting by the provided index
@@ -818,7 +818,7 @@ __device__ __forceinline__ T Curve::getVariableByHash(const VariableHash variabl
 
 #if !defined(SEATBELTS) || SEATBELTS
     if (!value_ptr)
-        return 0;
+        return {};
 #endif
     return *value_ptr;
 }
