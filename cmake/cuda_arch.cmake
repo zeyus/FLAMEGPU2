@@ -109,6 +109,11 @@ if(NOT CUDA_ARCH_LENGTH EQUAL 0)
         add_compile_options("$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-gencode arch=compute_${LAST_ARCH}$<COMMA>code=compute_${LAST_ARCH}>")
         add_link_options("$<DEVICE_LINK:SHELL:-gencode arch=compute_${LAST_ARCH}$<COMMA>code=compute_${LAST_ARCH}>")
     endif()
+    # Dump the callgraph to see if it points out where registers come from.
+    # add_link_options("$<DEVICE_LINK:SHELL:-Xnvlink -dump-callgraph>")
+    
+    # Enable verbose ptxas 
+    add_compile_options("$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-Xptxas -v>")
     #add_link_options("$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-gencode arch=compute_${LAST_ARCH},code=compute_${LAST_ARCH}>")
 
     # Get the minimum device architecture to pass through to nvcc to enable graceful failure prior to cuda execution.
