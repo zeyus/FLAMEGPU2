@@ -205,15 +205,6 @@ class MsgSpatial3D::In {
          * Search origin's grid cell
          */
         GridPos3D cell;
-        /**
-         * Pointer to message list metadata, e.g. environment bounds, search radius, PBM location
-         */
-        const MetaData *metadata;
-        /**
-         * CURVE hash for accessing message data
-         * agent function hash + message hash
-         */
-        Curve::NamespaceHash combined_hash;
     };
 
     /**
@@ -224,8 +215,6 @@ class MsgSpatial3D::In {
      * @param _metadata Reinterpreted as type MsgSpatial3D::MetaData
      */
     __device__ In(Curve::NamespaceHash agentfn_hash, Curve::NamespaceHash msg_hash, const void *_metadata)
-        : combined_hash(agentfn_hash + msg_hash)
-        , metadata(reinterpret_cast<const MetaData*>(_metadata))
     { }
     /**
      * Returns a Filter object which provides access to message iterator
@@ -236,27 +225,19 @@ class MsgSpatial3D::In {
      * @param z Search origin z coord
      */
     inline __device__ Filter operator() (const float &x, const float &y, const float &z) const {
-        return Filter(metadata, combined_hash, x, y, z);
+        return Filter(0, 0, x, y, z);
     }
 
     /**
      * Returns the search radius of the message list defined in the model description
      */
     __forceinline__ __device__ float radius() const {
+        extern __shared__ Curve::NamespaceHash* sm_buff[];
+        MetaData* metadata = reinterpret_cast<MetaData*>(sm_buff[2]);
         return metadata->radius;
     }
 
  private:
-    /**
-     * CURVE hash for accessing message data
-     * agentfn_hash + msg_hash
-     */
-    Curve::NamespaceHash combined_hash;
-    /**
-     * Device pointer to metadata required for accessing data structure
-     * e.g. PBM, search origin, environment bounds
-     */
-    const MetaData *metadata;
 };
 
 /**
@@ -294,8 +275,9 @@ __device__ T MsgSpatial3D::In::Filter::Message::getVariable(const char(&variable
         return static_cast<T>(0);
     }
 #endif
+    extern __shared__ Curve::NamespaceHash* sm_buff[];
     // get the value from curve using the stored hashes and message index.
-    T value = Curve::getMessageVariable<T>(variable_name, this->_parent.combined_hash, cell_index);
+    T value = Curve::getMessageVariable<T>(variable_name, *sm_buff[0], cell_index);
     return value;
 }
 
@@ -340,15 +322,17 @@ __device__ inline void MsgSpatial3D::Out::setLocation(const float &x, const floa
     this->scan_flag[index] = 1;
 }
 
-__device__ inline MsgSpatial3D::In::Filter::Filter(const MetaData* _metadata, const Curve::NamespaceHash &_combined_hash, const float& x, const float& y, const float& z)
-    : metadata(_metadata)
-    , combined_hash(_combined_hash) {
+__device__ inline MsgSpatial3D::In::Filter::Filter(const MetaData*, const Curve::NamespaceHash &_combined_hash, const float& x, const float& y, const float& z) {
     loc[0] = x;
     loc[1] = y;
     loc[2] = z;
+    extern __shared__ Curve::NamespaceHash* sm_buff[];
+    MetaData* _metadata = reinterpret_cast<MetaData*>(&sm_buff[2]);
     cell = getGridPosition3D(_metadata, x, y, z);
 }
 __device__ inline MsgSpatial3D::In::Filter::Message& MsgSpatial3D::In::Filter::Message::operator++() {
+    extern __shared__ Curve::NamespaceHash* sm_buff[];
+    MetaData* metadata = reinterpret_cast<MetaData*>(&sm_buff[2]);
     cell_index++;
     bool move_strip = cell_index >= cell_index_max;
     while (move_strip) {
@@ -359,12 +343,12 @@ __device__ inline MsgSpatial3D::In::Filter::Message& MsgSpatial3D::In::Filter::M
             // Calculate the strips start and end hash
             int absolute_cell[2] = { _parent.cell.y + relative_cell[0], _parent.cell.z + relative_cell[1] };
             // Skip the strip if it is completely out of bounds
-            if (absolute_cell[0] >= 0 && absolute_cell[1] >= 0 && absolute_cell[0] < static_cast<int>(_parent.metadata->gridDim[1]) && absolute_cell[1] < static_cast<int>(_parent.metadata->gridDim[2])) {
-                unsigned int start_hash = getHash3D(_parent.metadata, { _parent.cell.x - 1, absolute_cell[0], absolute_cell[1] });
-                unsigned int end_hash = getHash3D(_parent.metadata, { _parent.cell.x + 1, absolute_cell[0], absolute_cell[1] });
+            if (absolute_cell[0] >= 0 && absolute_cell[1] >= 0 && absolute_cell[0] < static_cast<int>(metadata->gridDim[1]) && absolute_cell[1] < static_cast<int>(metadata->gridDim[2])) {
+                unsigned int start_hash = getHash3D(metadata, { _parent.cell.x - 1, absolute_cell[0], absolute_cell[1] });
+                unsigned int end_hash = getHash3D(metadata, { _parent.cell.x + 1, absolute_cell[0], absolute_cell[1] });
                 // Lookup start and end indicies from PBM
-                cell_index = _parent.metadata->PBM[start_hash];
-                cell_index_max = _parent.metadata->PBM[end_hash + 1];
+                cell_index = metadata->PBM[start_hash];
+                cell_index_max = metadata->PBM[end_hash + 1];
             } else {
                 // Goto next strip
                 // Don't update move_strip

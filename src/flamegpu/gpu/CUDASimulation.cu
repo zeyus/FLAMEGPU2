@@ -680,7 +680,7 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
             auto *error_buffer = this->singletons->exception.getDevicePtr(streamIdx, this->getStream(streamIdx));
             sm_size = sizeof(error_buffer);
     #endif
-
+            sm_size += 1024; // Enough for input message metadata, without doing exact requirement
             if (func_des->func) {   // compile time specified agent function launch
                 // calculate the grid block size for main agent function
                 cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, func_des->func, 0, state_list_size);

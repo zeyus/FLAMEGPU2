@@ -32,7 +32,9 @@ typedef void(AgentFunctionWrapper)(
     unsigned int *scanFlag_agentDeath,
     unsigned int *scanFlag_messageOutput,
     unsigned int *scanFlag_agentOutput);  // Can't put __global__ in a typedef
-
+#if defined(__CUDACC__)
+#include "flamegpu/runtime/messaging/Spatial3D.h"
+#endif
 /**
  * Wrapper function for launching agent functions
  * Initialises FLAMEGPU_API instance
@@ -78,7 +80,19 @@ __global__ void agent_function_wrapper(
     if (threadIdx.x == 0) {
         buff[0] = error_buffer;
     }
+    char* buff0 = reinterpret_cast<char*>(buff);
+#else
+    extern __shared__ char buff0[];
 #endif
+    // Store spatial messaging stuff in shared mem
+    if (in_messagelist_metadata && threadIdx.x == 0) {  // This should be nullptr if there are no input messages
+        Curve::NamespaceHash *buff1 = reinterpret_cast<Curve::NamespaceHash*>(buff0);
+        *buff1 = agent_func_name_hash + messagename_inp_hash;
+        MsgSpatial3D::MetaData* buff2 = reinterpret_cast<MsgSpatial3D::MetaData*>(&buff1[2]);
+        *buff2 = *reinterpret_cast<const MsgSpatial3D::MetaData*>(in_messagelist_metadata);
+    }
+    __syncthreads();
+
     // Must be terminated here, else AgentRandom has bounds issues inside DeviceAPI constructor
     if (DeviceAPI<MsgIn, MsgOut>::getThreadIndex() >= popNo)
         return;
