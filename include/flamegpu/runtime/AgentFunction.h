@@ -36,9 +36,6 @@ typedef void(AgentFunctionWrapper)(
 #include "flamegpu/runtime/messaging/Spatial3D.h"
 //__shared__ Curve::NamespaceHash msginhash;
 //__shared__ MsgSpatial3D::MetaData msginmetadata;
-#else
-
-void __syncthreads();
 #endif
 /**
  * Wrapper function for launching agent functions
@@ -79,6 +76,7 @@ __global__ void agent_function_wrapper(
     unsigned int *scanFlag_agentDeath,
     unsigned int *scanFlag_messageOutput,
     unsigned int *scanFlag_agentOutput) {
+#if defined(__CUDACC__)
 #if !defined(SEATBELTS) || SEATBELTS
     extern __shared__ Curve::NamespaceHash sm_buff[];
 #else
@@ -93,7 +91,7 @@ __global__ void agent_function_wrapper(
         *buff2 = *reinterpret_cast<const MsgSpatial3D::MetaData*>(in_messagelist_metadata);
     }
     __syncthreads();
-
+#endif
     // Must be terminated here, else AgentRandom has bounds issues inside DeviceAPI constructor
     if (DeviceAPI<MsgIn, MsgOut>::getThreadIndex() >= popNo)
         return;
