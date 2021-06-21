@@ -97,11 +97,11 @@ class MsgBruteForce::In {
         __host__ __device__ Message& operator++() { 
             ++index;
             // requires wrapping for coalesced reads not starting at 0
-            if (index >= len)
+            if (index >= _parent.len)
                 index = 0;
             // set index to length (i.e. error state) after loop is complete
             if (index == blockDim.x*blockIdx.x + threadIdx.x)
-                index = len;
+                index = _parent.len;
             return *this; 
                                                   
         }
