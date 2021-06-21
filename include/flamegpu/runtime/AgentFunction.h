@@ -36,6 +36,9 @@ typedef void(AgentFunctionWrapper)(
 #include "flamegpu/runtime/messaging/Spatial3D.h"
 //__shared__ Curve::NamespaceHash msginhash;
 //__shared__ MsgSpatial3D::MetaData msginmetadata;
+#else
+
+void __syncthreads();
 #endif
 /**
  * Wrapper function for launching agent functions
