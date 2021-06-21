@@ -232,8 +232,8 @@ class MsgSpatial3D::In {
      * Returns the search radius of the message list defined in the model description
      */
     __forceinline__ __device__ float radius() const {
-        extern __shared__ Curve::NamespaceHash* sm_buff[];
-        MetaData* metadata = reinterpret_cast<MetaData*>(sm_buff[2]);
+        extern __shared__ Curve::NamespaceHash sm_buff[];
+        const MetaData* metadata = reinterpret_cast<MetaData*>(sm_buff+2);
         return metadata->radius;
     }
 
@@ -275,9 +275,9 @@ __device__ T MsgSpatial3D::In::Filter::Message::getVariable(const char(&variable
         return static_cast<T>(0);
     }
 #endif
-    extern __shared__ Curve::NamespaceHash* sm_buff[];
+    extern __shared__ Curve::NamespaceHash sm_buff[];
     // get the value from curve using the stored hashes and message index.
-    T value = Curve::getMessageVariable<T>(variable_name, *sm_buff[0], cell_index);
+    T value = Curve::getMessageVariable<T>(variable_name, sm_buff[0], cell_index);
     return value;
 }
 
@@ -326,13 +326,13 @@ __device__ inline MsgSpatial3D::In::Filter::Filter(const MetaData*, const Curve:
     loc[0] = x;
     loc[1] = y;
     loc[2] = z;
-    extern __shared__ Curve::NamespaceHash* sm_buff[];
-    MetaData* _metadata = reinterpret_cast<MetaData*>(&sm_buff[2]);
-    cell = getGridPosition3D(_metadata, x, y, z);
+    extern __shared__ Curve::NamespaceHash sm_buff[];
+    cell = getGridPosition3D(reinterpret_cast<MetaData*>(sm_buff + 2), x, y, z);
 }
 __device__ inline MsgSpatial3D::In::Filter::Message& MsgSpatial3D::In::Filter::Message::operator++() {
-    extern __shared__ Curve::NamespaceHash* sm_buff[];
-    MetaData* metadata = reinterpret_cast<MetaData*>(&sm_buff[2]);
+    extern __shared__ Curve::NamespaceHash sm_buff[];
+    const MetaData* metadata = reinterpret_cast<MetaData*>(sm_buff + 2);
+    //printf("access: %p, %p\n", sm_buff, metadata);
     cell_index++;
     bool move_strip = cell_index >= cell_index_max;
     while (move_strip) {

@@ -34,6 +34,8 @@ typedef void(AgentFunctionWrapper)(
     unsigned int *scanFlag_agentOutput);  // Can't put __global__ in a typedef
 #if defined(__CUDACC__)
 #include "flamegpu/runtime/messaging/Spatial3D.h"
+//__shared__ Curve::NamespaceHash msginhash;
+//__shared__ MsgSpatial3D::MetaData msginmetadata;
 #endif
 /**
  * Wrapper function for launching agent functions
@@ -75,20 +77,16 @@ __global__ void agent_function_wrapper(
     unsigned int *scanFlag_messageOutput,
     unsigned int *scanFlag_agentOutput) {
 #if !defined(SEATBELTS) || SEATBELTS
-    // We place this at the start of shared memory, so we can locate it anywhere in device code without a reference
-    extern __shared__ DeviceExceptionBuffer *buff[];
-    if (threadIdx.x == 0) {
-        buff[0] = error_buffer;
-    }
-    char* buff0 = reinterpret_cast<char*>(buff);
+    extern __shared__ Curve::NamespaceHash sm_buff[];
 #else
-    extern __shared__ char buff0[];
+    extern __shared__ Curve::NamespaceHash sm_buff[];
 #endif
     // Store spatial messaging stuff in shared mem
     if (in_messagelist_metadata && threadIdx.x == 0) {  // This should be nullptr if there are no input messages
-        Curve::NamespaceHash *buff1 = reinterpret_cast<Curve::NamespaceHash*>(buff0);
+        Curve::NamespaceHash *buff1 = reinterpret_cast<Curve::NamespaceHash*>(sm_buff);
         *buff1 = agent_func_name_hash + messagename_inp_hash;
-        MsgSpatial3D::MetaData* buff2 = reinterpret_cast<MsgSpatial3D::MetaData*>(&buff1[2]);
+        MsgSpatial3D::MetaData* buff2 = reinterpret_cast<MsgSpatial3D::MetaData*>(sm_buff+2);
+        //printf("init: %p, %p\n", buff1, buff2);
         *buff2 = *reinterpret_cast<const MsgSpatial3D::MetaData*>(in_messagelist_metadata);
     }
     __syncthreads();
