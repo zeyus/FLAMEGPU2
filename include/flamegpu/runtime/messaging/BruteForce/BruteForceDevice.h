@@ -41,7 +41,7 @@ class MsgBruteForce::In {
       * Returns an iterator to the start of the message list
       */
     __device__ iterator begin(void) const {  // const
-        return iterator(*this, 0);
+        return iterator(*this, blockDim.x*blockIdx.x + threadIdx.x);
     }
     /**
      * Returns an iterator to the position beyond the end of the message list
@@ -69,10 +69,10 @@ class MsgBruteForce::In {
      public:
         /**
          * Constructs a message and directly initialises all of it's member variables
-         * index is always init to 0
+         * index is the position of the thread in the block (to enable coalesced rather than broadcast reads)
          * @note See member variable documentation for their purposes
          */
-        __device__ Message(const MsgBruteForce::In &parent) : _parent(parent), index(0) {}
+        __device__ Message(const MsgBruteForce::In &parent) : _parent(parent), index(blockDim.x*blockIdx.x + threadIdx.x) {}
         /**
          * Alternate constructor, allows index to be manually set
          * @note I think this is unused
@@ -94,7 +94,17 @@ class MsgBruteForce::In {
          * Updates the message to return variables from the next message in the message list
          * @return Returns itself
          */
-        __host__ __device__ Message& operator++() { ++index;  return *this; }
+        __host__ __device__ Message& operator++() { 
+            ++index;
+            // requires wrapping for coalesced reads not starting at 0
+            if (index >= len)
+                index = 0;
+            // set index to length (i.e. error state) after loop is complete
+            if (index == blockDim.x*blockIdx.x + threadIdx.x)
+                index = len;
+            return *this; 
+                                                  
+        }
         /**
          * Returns the index of the message within the full message list
          */
