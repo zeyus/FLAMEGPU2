@@ -11,13 +11,13 @@
 #include "flamegpu/util/nvtx.h"
 
 /**
- * Internal namespace to hide __constant__ declarations from modeller
+ * Internal namespace to hide __device__ declarations from modeller
  */
 namespace flamegpu_internal {
     /**
      * Managed by HostEnvironment, holds all environment properties
      */
-    __constant__ char c_envPropBuffer[EnvironmentManager::MAX_BUFFER_SIZE];
+    __device__ char c_envPropBuffer[EnvironmentManager::MAX_BUFFER_SIZE];
 }  // namespace flamegpu_internal
 
 std::mutex EnvironmentManager::instance_mutex;

@@ -695,10 +695,10 @@ class Curve {
 
 
 namespace curve_internal {
-    extern __constant__ Curve::VariableHash d_hashes[Curve::MAX_VARIABLES];   // Device array of the hash values of registered variables
+    extern __device__ Curve::VariableHash d_hashes[Curve::MAX_VARIABLES];   // Device array of the hash values of registered variables
     extern __device__ char* d_variables[Curve::MAX_VARIABLES];                // Device array of pointer to device memory addresses for variable storage
-    extern __constant__ size_t d_sizes[Curve::MAX_VARIABLES];                // Device array of the types of registered variables
-    extern __constant__ unsigned int d_lengths[Curve::MAX_VARIABLES];
+    extern __device__ size_t d_sizes[Curve::MAX_VARIABLES];                // Device array of the types of registered variables
+    extern __device__ unsigned int d_lengths[Curve::MAX_VARIABLES];
 
     extern __device__ Curve::DeviceError d_curve_error;
     extern Curve::HostError h_curve_error;

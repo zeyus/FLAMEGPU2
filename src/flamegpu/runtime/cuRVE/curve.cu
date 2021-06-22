@@ -15,7 +15,7 @@ namespace curve_internal {
     /**
      * Curve hashtable, registered variable hash array
      */
-    __constant__ Curve::VariableHash d_hashes[Curve::MAX_VARIABLES];
+    __device__ Curve::VariableHash d_hashes[Curve::MAX_VARIABLES];
     /**
      * Curve hashtable, registered variable buffer array
      */
@@ -24,12 +24,12 @@ namespace curve_internal {
      * Curve hashtable, registered variable size array
      * For array variables this holds: elements * type_size
      */
-    __constant__ size_t d_sizes[Curve::MAX_VARIABLES];
+    __device__ size_t d_sizes[Curve::MAX_VARIABLES];
     /**
      * Curve hashtable, registered variable buffer length array
      * Holds the length of the buffer (in terms of agents/items, rather than bytes)
      */
-    __constant__ unsigned int d_lengths[Curve::MAX_VARIABLES];
+    __device__ unsigned int d_lengths[Curve::MAX_VARIABLES];
     /**
      * Legacy method for catching curve errors, this has now been replaced by DeviceException
      * @todo Remove this legacy code
