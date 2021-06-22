@@ -46,7 +46,11 @@ std::mutex Curve::instance_mutex;
 
 /* header implementations */
 __host__ Curve::Curve() :
-    deviceInitialised(false) {
+    deviceInitialised(false)
+    , _d_hashes(nullptr)
+    , _d_variables(nullptr)
+    , _d_lengths(nullptr)
+    , _d_sizes(nullptr) {
     // Initialise some host variables.
    // curve_internal::h_curve_error  = ERROR_NO_ERRORS;
 }
@@ -64,7 +68,7 @@ __host__ void Curve::purge() {
 }
 __host__ void Curve::initialiseDevice() {
     // Don't lock mutex here, do it in the calling method
-    if (!deviceInitialised) {
+    if (_d_hashes && !deviceInitialised) {
 
         // get a host pointer to d_hashes and d_variables
         //gpuErrchk(cudaGetSymbolAddress(reinterpret_cast<void **>(&_d_hashes), curve_internal::d_hashes));

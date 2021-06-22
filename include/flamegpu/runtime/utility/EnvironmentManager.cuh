@@ -778,7 +778,7 @@ public:
      */
     void purge();
 
- protected:
+ public:
     /**
      * Returns the EnvironmentManager singleton instance
      */

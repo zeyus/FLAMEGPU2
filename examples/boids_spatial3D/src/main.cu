@@ -308,7 +308,7 @@ int main(int argc, const char ** argv) {
         EnvironmentDescription &env = model.Environment();
 
         // Population size to generate, if no agents are loaded from disk
-        env.newProperty("POPULATION_TO_GENERATE", 32768u);
+        env.newProperty("POPULATION_TO_GENERATE", 1024u);
 
         // Environment Bounds
         env.newProperty("MIN_POSITION", -0.5f);
@@ -384,7 +384,6 @@ int main(int argc, const char ** argv) {
     /**
      * RDC init curve
      */
-    cuda_model.initialiseSingletons();
 
     unsigned int* _d_hashes;
     char** _d_variables;
@@ -394,11 +393,15 @@ int main(int argc, const char ** argv) {
     gpuErrchk(cudaGetSymbolAddress(reinterpret_cast<void**>(&_d_variables), curve_internal::d_variables));
     gpuErrchk(cudaGetSymbolAddress(reinterpret_cast<void**>(&_d_lengths), curve_internal::d_lengths));
     gpuErrchk(cudaGetSymbolAddress(reinterpret_cast<void**>(&_d_sizes), curve_internal::d_sizes));
-    cuda_model.singletons->curve.setPtrs(_d_hashes, _d_variables, _d_lengths, _d_sizes);
-    cuda_model.singletons->environment.initialiseDevice();
+    //cuda_model.singletons->curve.setPtrs(_d_hashes, _d_variables, _d_lengths, _d_sizes);
+    //cuda_model.singletons->environment.initialiseDevice();
     void* t_c_buffer = nullptr;
     gpuErrchk(cudaGetSymbolAddress(&t_c_buffer, flamegpu_internal::c_envPropBuffer));
-    cuda_model.singletons->environment.c_buffer = reinterpret_cast<char*>(t_c_buffer);
+    //cuda_model.singletons->environment.c_buffer = reinterpret_cast<char*>(t_c_buffer);
+    Curve::getInstance().setPtrs(_d_hashes, _d_variables, _d_lengths, _d_sizes),
+    EnvironmentManager::getInstance().c_buffer = reinterpret_cast<char*>(t_c_buffer);
+    cuda_model.initialiseSingletons();
+    EnvironmentManager::getInstance().c_buffer = reinterpret_cast<char*>(t_c_buffer);
 
     /**
      * Create visualisation
