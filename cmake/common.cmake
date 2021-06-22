@@ -489,7 +489,7 @@ function(add_flamegpu_executable NAME SRC FLAMEGPU_ROOT PROJECT_ROOT IS_EXAMPLE)
         add_compile_definitions(SEATBELTS=1)
     else()
         # Id off, debug builds have seatbelts, non debug builds do not.
-        add_compile_definitions($<IF:$<CONFIG:Debug>,SEATBELTS=1,SEATBELTS=0>)
+        add_compile_definitions(SEATBELTS=0)
     endif()
 
     # Flag the new linter target and the files to be linted, and pass optional exclusions filters (regex)
@@ -562,7 +562,7 @@ function(add_flamegpu_library NAME SRC FLAMEGPU_ROOT)
     endif ()
     
     # Enable RDC
-    set_property(TARGET ${NAME}  PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+    set_property(TARGET ${NAME}  PROPERTY CUDA_SEPARABLE_COMPILATION OFF)
 
     # Link against dependency targets / directories.
 

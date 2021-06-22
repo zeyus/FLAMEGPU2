@@ -39,7 +39,7 @@ struct standard_deviation_subtract_mean_impl {
         __host__ __device__ OutT operator()(const InT &a) const;
     };
 };
-extern __constant__ double STANDARD_DEVIATION_MEAN;
+//extern __constant__ double STANDARD_DEVIATION_MEAN;
 extern std::mutex STANDARD_DEVIATION_MEAN_mutex;
 extern standard_deviation_add_impl standard_deviation_add;
 extern standard_deviation_subtract_mean_impl standard_deviation_subtract_mean;
@@ -49,7 +49,7 @@ __device__ __forceinline__ OutT standard_deviation_add_impl::binary_function<Out
 }
 template<typename InT, typename OutT>
 __device__ __forceinline__ OutT standard_deviation_subtract_mean_impl::unary_function<InT, OutT>::operator()(const InT &a) const {
-    return pow(a - flamegpu_internal::STANDARD_DEVIATION_MEAN, 2.0);
+    return 0;
 }
 }  // namespace flamegpu_internal
 

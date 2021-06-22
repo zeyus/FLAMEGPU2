@@ -11,7 +11,7 @@ namespace flamegpu_internal {
     /**
      * Defined in EnvironmentManager.cu
      */
-    extern __constant__ char c_envPropBuffer[EnvironmentManager::MAX_BUFFER_SIZE];
+    //extern __constant__ char c_envPropBuffer[EnvironmentManager::MAX_BUFFER_SIZE];
 }  // namespace flamegpu_internal
 #endif
 

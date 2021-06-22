@@ -671,6 +671,7 @@ class EnvironmentManager {
      * Useful for adding individual variables to RTC cache later on
      */
     void addRTCOffset(const NamePair &name);
+public:
     /**
      * Device pointer to the environment property buffer in __constant__ memory
      */
@@ -742,6 +743,7 @@ class EnvironmentManager {
      * sim_instance_id:(C needs update, RTC needs update)
      */
     std::unordered_map<unsigned int, EnvUpdateFlags> deviceRequiresUpdate;
+public:
     /**
      * Function to initialise device-side portions of the environment manager
      */

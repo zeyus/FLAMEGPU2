@@ -17,7 +17,7 @@ namespace flamegpu_internal {
     /**
      * Managed by HostEnvironment, holds all environment properties
      */
-    __constant__ char c_envPropBuffer[EnvironmentManager::MAX_BUFFER_SIZE];
+    //__constant__ char c_envPropBuffer[EnvironmentManager::MAX_BUFFER_SIZE];
 }  // namespace flamegpu_internal
 
 std::mutex EnvironmentManager::instance_mutex;
@@ -162,7 +162,7 @@ void EnvironmentManager::initialiseDevice() {
     // Caller must lock mutex
     if (!deviceInitialised) {
         void *t_c_buffer = nullptr;
-        gpuErrchk(cudaGetSymbolAddress(&t_c_buffer, flamegpu_internal::c_envPropBuffer));
+        //gpuErrchk(cudaGetSymbolAddress(&t_c_buffer, flamegpu_internal::c_envPropBuffer));
         c_buffer = reinterpret_cast<char*>(t_c_buffer);
         // printf("Env Prop Constant Cache Buffer: %p - %p\n", c_buffer, c_buffer + MAX_BUFFER_SIZE);
         assert(CURVE_NAMESPACE_HASH == DeviceEnvironment::CURVE_NAMESPACE_HASH());  // Host and Device namespace const's do not match

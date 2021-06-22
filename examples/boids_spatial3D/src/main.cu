@@ -9,6 +9,12 @@ namespace curve_internal {
     __constant__ size_t d_sizes[1024];                // Device array of the types of registered variables
     __constant__ unsigned int d_lengths[1024];
 }  // namespace curve_internal
+namespace flamegpu_internal {
+    /**
+     * Managed by HostEnvironment, holds all environment properties
+     */
+    __constant__ char c_envPropBuffer[10 * 1024];
+}  // namespace flamegpu_internal
 
 #include "flamegpu/flame_api.h"
 
@@ -389,6 +395,10 @@ int main(int argc, const char ** argv) {
     gpuErrchk(cudaGetSymbolAddress(reinterpret_cast<void**>(&_d_lengths), curve_internal::d_lengths));
     gpuErrchk(cudaGetSymbolAddress(reinterpret_cast<void**>(&_d_sizes), curve_internal::d_sizes));
     cuda_model.singletons->curve.setPtrs(_d_hashes, _d_variables, _d_lengths, _d_sizes);
+    cuda_model.singletons->environment.initialiseDevice();
+    void* t_c_buffer = nullptr;
+    gpuErrchk(cudaGetSymbolAddress(&t_c_buffer, flamegpu_internal::c_envPropBuffer));
+    cuda_model.singletons->environment.c_buffer = reinterpret_cast<char*>(t_c_buffer);
 
     /**
      * Create visualisation

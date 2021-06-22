@@ -187,7 +187,7 @@ Any getAgentVariableStandardDevFunc(HostAgentAPI &ai, const std::string &variabl
     // Then for each number: subtract the Mean and square the result
     // Then work out the mean of those squared differences.
     auto lock = std::unique_lock<std::mutex>(flamegpu_internal::STANDARD_DEVIATION_MEAN_mutex);
-    gpuErrchk(cudaMemcpyToSymbol(flamegpu_internal::STANDARD_DEVIATION_MEAN, &mean, sizeof(double)));
+   // gpuErrchk(cudaMemcpyToSymbol(flamegpu_internal::STANDARD_DEVIATION_MEAN, &mean, sizeof(double)));
     const double variance = ai.transformReduce<T, double>(variable_name, flamegpu_internal::standard_deviation_subtract_mean, flamegpu_internal::standard_deviation_add, 0) / static_cast<double>(ai.count());
     lock.unlock();
     // Take the square root of that and we are done!
