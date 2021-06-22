@@ -57,6 +57,41 @@ class Curve {
         ERROR_TOO_MANY_VARIABLES               // !< The maximum number of curve variables has been reached
     };
 
+
+    // @todo better fn names.
+    __device__ __forceinline__ static Curve::VariableHash* get_sm_hashes() {
+        #if defined(__CUDACC__)
+            __shared__ Curve::VariableHash sm_hashes[1024]; // @todo - get 1024 from a constexpr / device accessible compile time constant.
+            return sm_hashes;
+        #else
+            return nullptr;
+        #endif
+    }
+
+    __device__ __forceinline__ static size_t* get_sm_sizes() {
+        #if defined(__CUDACC__)
+            __shared__ size_t sm_sizes[1024]; // @todo - get 1024 from a constexpr / device accessible compile time constant.
+            return sm_sizes;
+        #else
+            return nullptr;
+        #endif
+    }
+
+    __device__ __forceinline__ static unsigned int* get_sm_lengths() {
+        #if defined(__CUDACC__)
+            __shared__ unsigned int sm_lengths[1024]; // @todo - get 1024 from a constexpr / device accessible compile time constant.
+            return sm_lengths;
+        #else
+            return nullptr;
+        #endif
+    }
+
+/*     curve_internal
+extern __shared__ Curve::VariableHash sm_hashes[Curve::MAX_VARIABLES];
+extern __shared__ size_t sm_sizes[Curve::MAX_VARIABLES];
+extern __shared__ unsigned int sm_lengths[Curve::MAX_VARIABLES]; */
+
+
     /**
      * Main cuRVE variable hashing function for strings of length determined at runtime and not compile time
      * Should only be used for registered variables as this will be much slower than the compile time alternative.
@@ -504,6 +539,7 @@ class Curve {
      * @see Curve::size()
      */
     __host__ unsigned int checkHowManyMappedItems();
+    #define d_MAX_VARIABLES 1024; // @todo - better device one. 
     static const int MAX_VARIABLES = 1024;          // !< Default maximum number of cuRVE variables (must be a power of 2)
     static const VariableHash EMPTY_FLAG = 0;
     static const VariableHash DELETED_FLAG = 1;
@@ -753,7 +789,7 @@ __host__ void Curve::unregisterVariable(const char(&variableName)[N]) {
 __device__ __forceinline__ Curve::Variable Curve::getVariable(const VariableHash variable_hash) {
     for (unsigned int x = 0; x< MAX_VARIABLES; x++) {
         const Variable i = ((variable_hash + x) & (MAX_VARIABLES - 1));
-        const VariableHash h = curve_internal::d_hashes[i];
+        const VariableHash h = get_sm_hashes()[i];
         if (h == variable_hash)
             return i;
     }
@@ -770,14 +806,14 @@ __device__ __forceinline__ size_t Curve::getVariableSize(const VariableHash vari
 
     cv = getVariable(variable_hash);
 
-    return curve_internal::d_sizes[cv];
+    return get_sm_sizes()[cv];
 }
 __device__ __forceinline__ unsigned int Curve::getVariableLength(const VariableHash variable_hash) {
     Variable cv;
 
     cv = getVariable(variable_hash);
 
-    return curve_internal::d_lengths[cv];
+    return get_sm_lengths()[cv];
 }
 __device__ __forceinline__ void* Curve::getVariablePtrByHash(const VariableHash variable_hash, size_t offset) {
     Variable cv;
@@ -791,7 +827,7 @@ __device__ __forceinline__ void* Curve::getVariablePtrByHash(const VariableHash 
     }
 
     // check vector length
-    if (offset > curve_internal::d_sizes[cv] * curve_internal::d_lengths[cv]) {  // Note : offset is basicly index * sizeof(T)
+    if (offset > get_sm_sizes()[cv] * get_sm_lengths()[cv]) {  // Note : offset is basicly index * sizeof(T)
         curve_internal::d_curve_error = DEVICE_ERROR_UNKNOWN_LENGTH;
         return nullptr;
     }
@@ -905,8 +941,8 @@ __device__ __forceinline__ T Curve::getVariable(const char (&variableName)[N], V
         const auto cv = getVariable(variable_hash+namespace_hash);
         if (cv ==  UNKNOWN_VARIABLE) {
             DTHROW("Curve variable with name '%s' was not found.\n", variableName);
-        } else if (curve_internal::d_sizes[cv] != sizeof(T)) {
-            DTHROW("Curve variable with name '%s' type size mismatch %llu != %llu.\n", variableName, curve_internal::d_sizes[cv], sizeof(T));
+        } else if (get_sm_sizes()[cv] != sizeof(T)) {
+            DTHROW("Curve variable with name '%s' type size mismatch %llu != %llu.\n", variableName, get_sm_sizes()[cv], sizeof(T));
         }
     }
 #endif
@@ -928,8 +964,8 @@ __device__ __forceinline__ T Curve::getVariable_ldg(const char (&variableName)[N
         const auto cv = getVariable(variable_hash+namespace_hash);
         if (cv ==  UNKNOWN_VARIABLE) {
             DTHROW("Curve variable with name '%s' was not found.\n", variableName);
-        } else if (curve_internal::d_sizes[cv] != sizeof(T)) {
-            DTHROW("Curve variable with name '%s' type size mismatch %llu != %llu.\n", variableName, curve_internal::d_sizes[cv], sizeof(T));
+        } else if (get_sm_sizes()[cv] != sizeof(T)) {
+            DTHROW("Curve variable with name '%s' type size mismatch %llu != %llu.\n", variableName, get_sm_sizes()[cv], sizeof(T));
         }
     }
 #endif
@@ -947,8 +983,8 @@ __device__ __forceinline__ T Curve::getArrayVariable(const char(&variableName)[M
         const auto cv = getVariable(variable_hash+namespace_hash);
         if (cv ==  UNKNOWN_VARIABLE) {
             DTHROW("Curve variable array with name '%s' was not found.\n", variableName);
-        } else if (curve_internal::d_sizes[cv] != sizeof(T) * N) {
-            DTHROW("Curve variable array with name '%s', type size mismatch %llu != %llu.\n", variableName, curve_internal::d_sizes[cv], sizeof(T) * N);
+        } else if (get_sm_sizes()[cv] != sizeof(T) * N) {
+            DTHROW("Curve variable array with name '%s', type size mismatch %llu != %llu.\n", variableName, get_sm_sizes()[cv], sizeof(T) * N);
         }
     }
     if (array_index >= N) {
@@ -972,8 +1008,8 @@ __device__ __forceinline__ T Curve::getArrayVariable_ldg(const char(&variableNam
         const auto cv = getVariable(variable_hash+namespace_hash);
         if (cv ==  UNKNOWN_VARIABLE) {
             DTHROW("Curve variable array with name '%s' was not found.\n", variableName);
-        } else if (curve_internal::d_sizes[cv] != sizeof(T) * N) {
-            DTHROW("Curve variable array with name '%s', type size mismatch %llu != %llu.\n", variableName, curve_internal::d_sizes[cv], sizeof(T) * N);
+        } else if (get_sm_sizes()[cv] != sizeof(T) * N) {
+            DTHROW("Curve variable array with name '%s', type size mismatch %llu != %llu.\n", variableName, get_sm_sizes()[cv], sizeof(T) * N);
         }
     }
     if (array_index >= N) {
@@ -1034,8 +1070,8 @@ __device__ __forceinline__ void Curve::setVariable(const char(&variableName)[N],
         const auto cv = getVariable(variable_hash+namespace_hash);
         if (cv ==  UNKNOWN_VARIABLE) {
             DTHROW("Curve variable with name '%s' was not found.\n", variableName);
-        } else if (curve_internal::d_sizes[cv] != sizeof(T)) {
-            DTHROW("Curve variable with name '%s', type size mismatch %llu != %llu.\n", variableName, curve_internal::d_sizes[cv], sizeof(T));
+        } else if (get_sm_sizes()[cv] != sizeof(T)) {
+            DTHROW("Curve variable with name '%s', type size mismatch %llu != %llu.\n", variableName, get_sm_sizes()[cv], sizeof(T));
         }
     }
 #endif
@@ -1057,8 +1093,8 @@ __device__ __forceinline__ void Curve::setArrayVariable(const char(&variableName
         const auto cv = getVariable(variable_hash+namespace_hash);
         if (cv ==  UNKNOWN_VARIABLE) {
             DTHROW("Curve variable array with name '%s' was not found.\n", variableName);
-        } else if (curve_internal::d_sizes[cv] != sizeof(T) * N) {
-            DTHROW("Curve variable array with name '%s', size mismatch %llu != %llu.\n", variableName, curve_internal::d_sizes[cv], sizeof(T) * N);
+        } else if (get_sm_sizes()[cv] != sizeof(T) * N) {
+            DTHROW("Curve variable array with name '%s', size mismatch %llu != %llu.\n", variableName, get_sm_sizes()[cv], sizeof(T) * N);
         }
     }
     if (array_index >= N) {

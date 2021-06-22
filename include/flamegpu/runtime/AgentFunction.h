@@ -54,6 +54,8 @@ typedef void(AgentFunctionWrapper)(
  * @tparam MsgIn Message handler for input messages (e.g. MsgNone, MsgBruteForce, MsgSpatial3D)
  * @tparam MsgOut Message handler for output messages (e.g. MsgNone, MsgBruteForce, MsgSpatial3D)
  */
+// This should only be seen by nvcc 
+#if defined(__CUDACC__)
 template<typename AgentFunction, typename MsgIn, typename MsgOut>
 __global__ void agent_function_wrapper(
 #if !defined(SEATBELTS) || SEATBELTS
@@ -72,6 +74,14 @@ __global__ void agent_function_wrapper(
     unsigned int *scanFlag_agentDeath,
     unsigned int *scanFlag_messageOutput,
     unsigned int *scanFlag_agentOutput) {
+
+    // block strided loop to move all of curve into smem. Ideally we would only move waht is required...
+    for(unsigned int idx = threadIdx.x; idx += blockDim.x; idx ++) {
+        Curve::get_sm_hashes()[idx] = curve_internal::d_hashes[idx];
+        Curve::get_sm_sizes()[idx] = curve_internal::d_sizes[idx];
+        Curve::get_sm_lengths()[idx] = curve_internal::d_lengths[idx];
+    }
+
 #if !defined(SEATBELTS) || SEATBELTS
     // We place this at the start of shared memory, so we can locate it anywhere in device code without a reference
     extern __shared__ DeviceExceptionBuffer *buff[];
@@ -79,6 +89,7 @@ __global__ void agent_function_wrapper(
         buff[0] = error_buffer;
     }
 #endif
+    __syncthreads();
     // Must be terminated here, else AgentRandom has bounds issues inside DeviceAPI constructor
     if (DeviceAPI<MsgIn, MsgOut>::getThreadIndex() >= popNo)
         return;
@@ -105,5 +116,6 @@ __global__ void agent_function_wrapper(
     }
 }
 
+#endif // cudacc
 
 #endif  // INCLUDE_FLAMEGPU_RUNTIME_AGENTFUNCTION_H_

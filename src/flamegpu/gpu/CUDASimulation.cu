@@ -678,7 +678,7 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
             unsigned int sm_size = 0;
     #if !defined(SEATBELTS) || SEATBELTS
             auto *error_buffer = this->singletons->exception.getDevicePtr(streamIdx, this->getStream(streamIdx));
-            sm_size = sizeof(error_buffer);
+            sm_size += sizeof(error_buffer);
     #endif
 
             if (func_des->func) {   // compile time specified agent function launch
