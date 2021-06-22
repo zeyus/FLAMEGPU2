@@ -487,9 +487,10 @@ function(add_flamegpu_executable NAME SRC FLAMEGPU_ROOT PROJECT_ROOT IS_EXAMPLE)
     if (SEATBELTS)
         # If on, all build configs have  seatbelts
         add_compile_definitions(SEATBELTS=1)
-    else()
+        else()
         # Id off, debug builds have seatbelts, non debug builds do not.
-        add_compile_definitions($<IF:$<CONFIG:Debug>,SEATBELTS=1,SEATBELTS=0>)
+        add_compile_definitions(SEATBELTS=0)
+        # add_compile_definitions($<IF:$<CONFIG:Debug>,SEATBELTS=1,SEATBELTS=0>)
     endif()
 
     # Flag the new linter target and the files to be linted, and pass optional exclusions filters (regex)
@@ -549,9 +550,10 @@ function(add_flamegpu_library NAME SRC FLAMEGPU_ROOT)
     if (SEATBELTS)
         # If on, all build configs have  seatbelts
         add_compile_definitions(SEATBELTS=1)
-    else()
+        else()
+        add_compile_definitions(SEATBELTS=0)
         # Id off, debug builds have seatbelts, non debug builds do not.
-        add_compile_definitions($<IF:$<CONFIG:Debug>,SEATBELTS=1,SEATBELTS=0>)
+        # add_compile_definitions($<IF:$<CONFIG:Debug>,SEATBELTS=1,SEATBELTS=0>)
     endif()
     
     if (NOT RTC_DISK_CACHE)

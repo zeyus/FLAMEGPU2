@@ -86,6 +86,8 @@ class Curve {
         #endif
     }
 
+    __device__ static void initialise_sm();
+
 /*     curve_internal
 extern __shared__ Curve::VariableHash sm_hashes[Curve::MAX_VARIABLES];
 extern __shared__ size_t sm_sizes[Curve::MAX_VARIABLES];
@@ -740,6 +742,18 @@ namespace curve_internal {
     extern Curve::HostError h_curve_error;
 }  // namespace curve_internal
 
+
+__device__ inline void Curve::initialise_sm() {
+    #if defined(__CUDACC__)
+    // block strided loop to move all of curve into smem. Ideally we would only move waht is required...
+    for(unsigned int idx = threadIdx.x; idx < 1024; idx += blockDim.x) {
+        Curve::get_sm_hashes()[idx] = curve_internal::d_hashes[idx];
+        Curve::get_sm_sizes()[idx] = curve_internal::d_sizes[idx];
+        Curve::get_sm_lengths()[idx] = curve_internal::d_lengths[idx];
+    }
+    __syncthreads();
+    #endif
+}
 
 /* TEMPLATE HASHING FUNCTIONS */
 

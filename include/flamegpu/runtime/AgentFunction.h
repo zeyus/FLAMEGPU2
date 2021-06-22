@@ -75,12 +75,7 @@ __global__ void agent_function_wrapper(
     unsigned int *scanFlag_messageOutput,
     unsigned int *scanFlag_agentOutput) {
 
-    // block strided loop to move all of curve into smem. Ideally we would only move waht is required...
-    for(unsigned int idx = threadIdx.x; idx += blockDim.x; idx ++) {
-        Curve::get_sm_hashes()[idx] = curve_internal::d_hashes[idx];
-        Curve::get_sm_sizes()[idx] = curve_internal::d_sizes[idx];
-        Curve::get_sm_lengths()[idx] = curve_internal::d_lengths[idx];
-    }
+    Curve::initialise_sm();
 
 #if !defined(SEATBELTS) || SEATBELTS
     // We place this at the start of shared memory, so we can locate it anywhere in device code without a reference
