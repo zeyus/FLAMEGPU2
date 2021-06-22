@@ -370,7 +370,7 @@ class MsgArray2D::Out {
      */
     const MetaData * const metadata;
 };
-
+#ifdef __main_cu__
 
 
 template<typename T, unsigned int N>
@@ -458,5 +458,5 @@ __device__ MsgArray2D::In::Filter::Message& MsgArray2D::In::Filter::Message::ope
         their_x;
     return *this;
 }
-
+#endif
 #endif  // INCLUDE_FLAMEGPU_RUNTIME_MESSAGING_ARRAY2D_ARRAY2DDEVICE_H_

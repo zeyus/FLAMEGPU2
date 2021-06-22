@@ -199,7 +199,7 @@ class MsgBruteForce::Out {
      */
     unsigned int *scan_flag;
 };
-
+#ifdef __main_cu__
 template<typename T, unsigned int N>
 __device__ T MsgBruteForce::In::Message::getVariable(const char(&variable_name)[N]) const {
 #if !defined(SEATBELTS) || SEATBELTS
@@ -229,5 +229,5 @@ __device__ void MsgBruteForce::Out::setVariable(const char(&variable_name)[N], T
     // Set scan flag incase the message is optional
     this->scan_flag[index] = 1;
 }
-
+#endif
 #endif  // INCLUDE_FLAMEGPU_RUNTIME_MESSAGING_BRUTEFORCE_BRUTEFORCEDEVICE_H_

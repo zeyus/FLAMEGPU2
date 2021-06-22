@@ -284,7 +284,7 @@ class MsgSpatial3D::Out : public MsgBruteForce::Out {
      */
     __device__ void setLocation(const float &x, const float &y, const float &z) const;
 };
-
+#ifdef __main_cu__
 template<typename T, unsigned int N>
 __device__ T MsgSpatial3D::In::Filter::Message::getVariable(const char(&variable_name)[N]) const {
 #if !defined(SEATBELTS) || SEATBELTS
@@ -298,7 +298,7 @@ __device__ T MsgSpatial3D::In::Filter::Message::getVariable(const char(&variable
     T value = Curve::getMessageVariable<T>(variable_name, this->_parent.combined_hash, cell_index);
     return value;
 }
-
+#endif
 
 __device__ __forceinline__ MsgSpatial3D::GridPos3D getGridPosition3D(const MsgSpatial3D::MetaData *md, float x, float y, float z) {
     // Clamp each grid coord to 0<=x<dim
@@ -328,6 +328,7 @@ __device__ __forceinline__ unsigned int getHash3D(const MsgSpatial3D::MetaData *
         gridPos[0]);                                      // x
 }
 
+#ifdef __main_cu__
 __device__ inline void MsgSpatial3D::Out::setLocation(const float &x, const float &y, const float &z) const {
     unsigned int index = (blockDim.x * blockIdx.x) + threadIdx.x;  // + d_message_count;
 
@@ -375,5 +376,5 @@ __device__ inline MsgSpatial3D::In::Filter::Message& MsgSpatial3D::In::Filter::M
     }
     return *this;
 }
-
+#endif
 #endif  // INCLUDE_FLAMEGPU_RUNTIME_MESSAGING_SPATIAL3D_SPATIAL3DDEVICE_H_

@@ -272,7 +272,7 @@ class MsgBucket::Out : public MsgBruteForce::Out {
     */
     const MetaData * const metadata;
 };
-
+#ifdef __main_cu__
 __device__ MsgBucket::In::Filter::Filter(const MetaData* _metadata, const Curve::NamespaceHash &_combined_hash, const IntT& beginKey, const IntT& endKey)
     : bucket_begin(0)
     , bucket_end(0)
@@ -313,5 +313,5 @@ __device__ T MsgBucket::In::Filter::Message::getVariable(const char(&variable_na
     T value = Curve::getMessageVariable<T>(variable_name, this->_parent.combined_hash, cell_index);
     return value;
 }
-
+#endif
 #endif  // INCLUDE_FLAMEGPU_RUNTIME_MESSAGING_BUCKET_BUCKETDEVICE_H_

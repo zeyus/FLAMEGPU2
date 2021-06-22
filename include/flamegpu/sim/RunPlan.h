@@ -8,8 +8,8 @@
 #include <memory>
 
 #include "flamegpu/model/EnvironmentDescription.h"
-#include "flamegpu/util/Any.h"
 #include "flamegpu/gpu/CUDAEnsemble.h"
+#include "flamegpu/util/Any.h"
 
 
 class ModelDescription;

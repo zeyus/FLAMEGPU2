@@ -78,6 +78,7 @@ class DeviceEnvironment {
     __device__ __forceinline__ bool containsProperty(const char(&name)[N]) const;
 };
 
+#ifdef __main_cu__
 // Mash compilation of these functions from RTC builds as this requires a dynamic implementation of the function in curve_rtc
 #ifndef __CUDACC_RTC__
 /**
@@ -130,5 +131,5 @@ __device__ __forceinline__ bool DeviceEnvironment::containsProperty(const char(&
 }
 
 #endif  // __CUDACC_RTC__
-
+#endif
 #endif  // INCLUDE_FLAMEGPU_RUNTIME_UTILITY_DEVICEENVIRONMENT_CUH_

@@ -349,7 +349,7 @@ class MsgArray::Out {
      */
     const MetaData * const metadata;
 };
-
+#ifdef __main_cu__
 template<typename T, unsigned int N>
 __device__ T MsgArray::In::Message::getVariable(const char(&variable_name)[N]) const {
 #if !defined(SEATBELTS) || SEATBELTS
@@ -422,5 +422,5 @@ __device__ MsgArray::In::Filter::Message& MsgArray::In::Filter::Message::operato
     index_1d = (this->_parent.loc + relative_cell + this->_parent.length) % this->_parent.length;
     return *this;
 }
-
+#endif
 #endif  // INCLUDE_FLAMEGPU_RUNTIME_MESSAGING_ARRAY_ARRAYDEVICE_H_

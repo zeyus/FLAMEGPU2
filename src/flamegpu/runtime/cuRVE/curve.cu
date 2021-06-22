@@ -11,36 +11,36 @@
 #include "flamegpu/gpu/CUDAErrorChecking.h"
 #include "flamegpu/util/nvtx.h"
 
-namespace curve_internal {
-    /**
-     * Curve hashtable, registered variable hash array
-     */
-    __constant__ Curve::VariableHash d_hashes[Curve::MAX_VARIABLES];
-    /**
-     * Curve hashtable, registered variable buffer array
-     */
-    __device__ char* d_variables[Curve::MAX_VARIABLES];
-    /**
-     * Curve hashtable, registered variable size array
-     * For array variables this holds: elements * type_size
-     */
-    __constant__ size_t d_sizes[Curve::MAX_VARIABLES];
-    /**
-     * Curve hashtable, registered variable buffer length array
-     * Holds the length of the buffer (in terms of agents/items, rather than bytes)
-     */
-    __constant__ unsigned int d_lengths[Curve::MAX_VARIABLES];
-    /**
-     * Legacy method for catching curve errors, this has now been replaced by DeviceException
-     * @todo Remove this legacy code
-     */
-    __device__ Curve::DeviceError d_curve_error;
-    /**
-     * Legacy method for catching curve errors, this should now be replaced with various exceptions
-     * @todo Remove this legacy code
-     */
-    Curve::HostError h_curve_error;
-}  // namespace curve_internal
+//namespace curve_internal {
+//    /**
+//     * Curve hashtable, registered variable hash array
+//     */
+//    __constant__ Curve::VariableHash d_hashes[Curve::MAX_VARIABLES];
+//    /**
+//     * Curve hashtable, registered variable buffer array
+//     */
+//    __device__ char* d_variables[Curve::MAX_VARIABLES];
+//    /**
+//     * Curve hashtable, registered variable size array
+//     * For array variables this holds: elements * type_size
+//     */
+//    __constant__ size_t d_sizes[Curve::MAX_VARIABLES];
+//    /**
+//     * Curve hashtable, registered variable buffer length array
+//     * Holds the length of the buffer (in terms of agents/items, rather than bytes)
+//     */
+//    __constant__ unsigned int d_lengths[Curve::MAX_VARIABLES];
+//    /**
+//     * Legacy method for catching curve errors, this has now been replaced by DeviceException
+//     * @todo Remove this legacy code
+//     */
+//    __device__ Curve::DeviceError d_curve_error;
+//    /**
+//     * Legacy method for catching curve errors, this should now be replaced with various exceptions
+//     * @todo Remove this legacy code
+//     */
+//    Curve::HostError h_curve_error;
+//}  // namespace curve_internal
 
 std::mutex Curve::instance_mutex;
 
@@ -48,27 +48,29 @@ std::mutex Curve::instance_mutex;
 __host__ Curve::Curve() :
     deviceInitialised(false) {
     // Initialise some host variables.
-    curve_internal::h_curve_error  = ERROR_NO_ERRORS;
+   // curve_internal::h_curve_error  = ERROR_NO_ERRORS;
+}
+void Curve::setPtrs(unsigned int *d_hashes, char** d_variables, unsigned int* d_lengths, size_t* d_sizes) {
+    _d_hashes = d_hashes;
+    _d_variables = d_variables;
+    _d_lengths = d_lengths;
+    _d_sizes = d_sizes;
 }
 __host__ void Curve::purge() {
     auto lock = std::unique_lock<std::shared_timed_mutex>(mutex);
     deviceInitialised = false;
-    curve_internal::h_curve_error = ERROR_NO_ERRORS;
+   // curve_internal::h_curve_error = ERROR_NO_ERRORS;
     initialiseDevice();
 }
 __host__ void Curve::initialiseDevice() {
     // Don't lock mutex here, do it in the calling method
     if (!deviceInitialised) {
-        unsigned int *_d_hashes;
-        char** _d_variables;
-        unsigned int* _d_lengths;
-        size_t* _d_sizes;
 
         // get a host pointer to d_hashes and d_variables
-        gpuErrchk(cudaGetSymbolAddress(reinterpret_cast<void **>(&_d_hashes), curve_internal::d_hashes));
-        gpuErrchk(cudaGetSymbolAddress(reinterpret_cast<void **>(&_d_variables), curve_internal::d_variables));
-        gpuErrchk(cudaGetSymbolAddress(reinterpret_cast<void **>(&_d_lengths), curve_internal::d_lengths));
-        gpuErrchk(cudaGetSymbolAddress(reinterpret_cast<void **>(&_d_sizes), curve_internal::d_sizes));
+        //gpuErrchk(cudaGetSymbolAddress(reinterpret_cast<void **>(&_d_hashes), curve_internal::d_hashes));
+        //gpuErrchk(cudaGetSymbolAddress(reinterpret_cast<void **>(&_d_variables), curve_internal::d_variables));
+        //gpuErrchk(cudaGetSymbolAddress(reinterpret_cast<void **>(&_d_lengths), curve_internal::d_lengths));
+        //gpuErrchk(cudaGetSymbolAddress(reinterpret_cast<void **>(&_d_sizes), curve_internal::d_sizes));
 
         // set values of hash table to 0 on host and device
         memset(h_hashes, 0, sizeof(unsigned int)*MAX_VARIABLES);
@@ -134,7 +136,7 @@ __host__ Curve::Variable Curve::_registerVariableByHash(VariableHash variable_ha
     while (h_hashes[i] != EMPTY_FLAG && h_hashes[i] != DELETED_FLAG) {
         n += 1;
         if (n >= MAX_VARIABLES) {
-            curve_internal::h_curve_error = ERROR_TOO_MANY_VARIABLES;
+            //curve_internal::h_curve_error = ERROR_TOO_MANY_VARIABLES;
             return UNKNOWN_VARIABLE;
         }
         i += 1;
@@ -203,18 +205,18 @@ __host__ void Curve::updateDevice() {
     // Initialise the device (if required)
     assert(deviceInitialised);  // No reason for this to ever fail. Purge calls init device
     // Copy
-    gpuErrchk(cudaMemcpyToSymbol(curve_internal::d_hashes, h_hashes, sizeof(unsigned int) * MAX_VARIABLES));
-    gpuErrchk(cudaMemcpyToSymbol(curve_internal::d_variables, h_d_variables, sizeof(void*) * MAX_VARIABLES));
-    gpuErrchk(cudaMemcpyToSymbol(curve_internal::d_sizes, h_sizes, sizeof(size_t) * MAX_VARIABLES));
-    gpuErrchk(cudaMemcpyToSymbol(curve_internal::d_lengths, h_lengths, sizeof(unsigned int) * MAX_VARIABLES));
+    gpuErrchk(cudaMemcpy(_d_hashes, h_hashes, sizeof(unsigned int) * MAX_VARIABLES, cudaMemcpyHostToDevice));
+    gpuErrchk(cudaMemcpy(_d_variables, h_d_variables, sizeof(void*) * MAX_VARIABLES, cudaMemcpyHostToDevice));
+    gpuErrchk(cudaMemcpy(_d_sizes, h_sizes, sizeof(size_t) * MAX_VARIABLES, cudaMemcpyHostToDevice));
+    gpuErrchk(cudaMemcpy(_d_lengths, h_lengths, sizeof(unsigned int) * MAX_VARIABLES, cudaMemcpyHostToDevice));
 }
 
 /* errors */
 void __host__ Curve::printLastHostError(const char* file, const char* function, const int line) {
     // Do not lock mutex here, do it in the calling method
-    if (curve_internal::h_curve_error != ERROR_NO_ERRORS) {
-        printf("%s.%s.%d: cuRVE Host Error %d (%s)\n", file, function, line, (unsigned int)curve_internal::h_curve_error, getHostErrorString(curve_internal::h_curve_error));
-    }
+    //if (curve_internal::h_curve_error != ERROR_NO_ERRORS) {
+    //    printf("%s.%s.%d: cuRVE Host Error %d (%s)\n", file, function, line, (unsigned int)curve_internal::h_curve_error, getHostErrorString(curve_internal::h_curve_error));
+    //}
 }
 
 void __host__ Curve::printErrors(const char* file, const char* function, const int line) {
@@ -227,10 +229,10 @@ void __host__ Curve::printErrors(const char* file, const char* function, const i
     printLastHostError(file, function, line);
 
     // check device errors
-    gpuErrchk(cudaMemcpyFromSymbol(&d_curve_error_local, curve_internal::d_curve_error, sizeof(DeviceError)));
-    if (d_curve_error_local != DEVICE_ERROR_NO_ERRORS) {
-        printf("%s.%s.%d: cuRVE Device Error %d (%s)\n", file, function, line, (unsigned int)d_curve_error_local, getDeviceErrorString(d_curve_error_local));
-    }
+    //gpuErrchk(cudaMemcpyFromSymbol(&d_curve_error_local, curve_internal::d_curve_error, sizeof(DeviceError)));
+    //if (d_curve_error_local != DEVICE_ERROR_NO_ERRORS) {
+    //    printf("%s.%s.%d: cuRVE Device Error %d (%s)\n", file, function, line, (unsigned int)d_curve_error_local, getDeviceErrorString(d_curve_error_local));
+    //}
 }
 __host__ const char* Curve::getHostErrorString(HostError e) {
     // Do not lock mutex here, do it in the calling method
@@ -247,7 +249,7 @@ __host__ const char* Curve::getHostErrorString(HostError e) {
 }
 __host__ Curve::HostError Curve::getLastHostError() {
     auto lock = std::shared_lock<std::shared_timed_mutex>(mutex);
-    return curve_internal::h_curve_error;
+    return ERROR_NO_ERRORS;//curve_internal::h_curve_error;
 }
 __host__ void Curve::clearErrors() {
     auto lock = std::unique_lock<std::shared_timed_mutex>(mutex);
@@ -257,9 +259,9 @@ __host__ void Curve::clearErrors() {
     DeviceError curve_error_none;
 
     curve_error_none = DEVICE_ERROR_NO_ERRORS;
-    curve_internal::h_curve_error  = ERROR_NO_ERRORS;
+    //curve_internal::h_curve_error  = ERROR_NO_ERRORS;
 
-    gpuErrchk(cudaMemcpyToSymbol(curve_internal::d_curve_error, &curve_error_none, sizeof(DeviceError)));
+    //gpuErrchk(cudaMemcpyToSymbol(curve_internal::d_curve_error, &curve_error_none, sizeof(DeviceError)));
 }
 
 __host__ unsigned int Curve::checkHowManyMappedItems() {

@@ -1,7 +1,14 @@
+#define __main_cu__
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
+namespace curve_internal {
+    __constant__ unsigned int d_hashes[1024];   // Device array of the hash values of registered variables
+    __device__ char* d_variables[1024];                // Device array of pointer to device memory addresses for variable storage
+    __constant__ size_t d_sizes[1024];                // Device array of the types of registered variables
+    __constant__ unsigned int d_lengths[1024];
+}  // namespace curve_internal
 
 #include "flamegpu/flame_api.h"
 
@@ -367,6 +374,21 @@ int main(int argc, const char ** argv) {
      * Create Model Runner
      */
     CUDASimulation cuda_model(model);
+
+    /**
+     * RDC init curve
+     */
+    cuda_model.initialiseSingletons();
+
+    unsigned int* _d_hashes;
+    char** _d_variables;
+    unsigned int* _d_lengths;
+    size_t* _d_sizes;
+    gpuErrchk(cudaGetSymbolAddress(reinterpret_cast<void**>(&_d_hashes), curve_internal::d_hashes));
+    gpuErrchk(cudaGetSymbolAddress(reinterpret_cast<void**>(&_d_variables), curve_internal::d_variables));
+    gpuErrchk(cudaGetSymbolAddress(reinterpret_cast<void**>(&_d_lengths), curve_internal::d_lengths));
+    gpuErrchk(cudaGetSymbolAddress(reinterpret_cast<void**>(&_d_sizes), curve_internal::d_sizes));
+    cuda_model.singletons->curve.setPtrs(_d_hashes, _d_variables, _d_lengths, _d_sizes);
 
     /**
      * Create visualisation

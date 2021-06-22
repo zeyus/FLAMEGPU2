@@ -30,7 +30,12 @@
  * For example multiple objects may which to request that curve is initialised. This class will ensure that this function call is only made once the first time that a cuRVEInstance is required.
  */
 class Curve {
+    unsigned int* _d_hashes;
+    char** _d_variables;
+    unsigned int* _d_lengths;
+    size_t* _d_sizes;
  public:
+     void setPtrs(unsigned int* d_hashes, char** d_variables, unsigned int* d_lengths, size_t* d_sizes);
     static const int UNKNOWN_VARIABLE = -1;              // !< value returned as a Variable if an API function encounters an error
 
     typedef int                      Variable;           // !< Typedef for cuRVE variable handle
@@ -145,6 +150,8 @@ class Curve {
      */
     template <unsigned int N>
     __host__ void unregisterVariable(const char(&variableName)[N]);
+
+#ifdef __main_cu__
 
     /**
      * Device function for getting the index of a variable of given name within the Curve hashtable buffers
@@ -437,6 +444,7 @@ class Curve {
      * @todo Remove this legacy code
      */
     __device__ __forceinline__ static void printLastDeviceError(const char* file, const char* function, const int line);
+#endif
     /**
      * Host API function for printing the last host error
      *
@@ -460,6 +468,8 @@ class Curve {
      * @todo Remove this legacy code
      */
     void __host__ printErrors(const char* file, const char* function, const int line);
+
+#ifdef __main_cu__
     /**
      * Device API function for returning a constant string error description
      *
@@ -470,6 +480,7 @@ class Curve {
      * @todo Remove this legacy code
      */
     __device__ __host__ __forceinline__ static const char*  getDeviceErrorString(DeviceError error_code);
+#endif
     /**
      * Host API function for returning a constant string error description
      *
@@ -479,6 +490,8 @@ class Curve {
      * @todo Remove this legacy code
      */
     __host__ const char*  getHostErrorString(HostError error_code);
+
+#ifdef __main_cu__
     /**
      * Device API function for returning the last reported error code
      *
@@ -486,6 +499,7 @@ class Curve {
      * @todo Remove this legacy code
      */
     __device__ __forceinline__ static DeviceError getLastDeviceError();
+#endif
 
     /**
      * Host API function for returning the last reported error code
@@ -544,6 +558,8 @@ class Curve {
      * @see unregisterVariableByHash(VariableHash)
      */
     __host__ void _unregisterVariableByHash(VariableHash variable_hash);
+
+#ifdef __main_cu__
     /**
      * Device template function for getting a setting a single typed value from a constant string variable name
      *
@@ -624,6 +640,7 @@ class Curve {
      */
     template <typename T, unsigned int N, unsigned int M>
     __device__ __forceinline__ static void setArrayVariable(const char(&variableName)[M], VariableHash namespace_hash, T variable, unsigned int variable_index, unsigned int array_index);
+#endif
     VariableHash h_hashes[MAX_VARIABLES];         // Host array of the hash values of registered variables
     void* h_d_variables[MAX_VARIABLES];           // Host array of pointer to device memory addresses for variable storage
     size_t h_sizes[MAX_VARIABLES];                // Host array of the sizes of registered variable types (Note: RTTI not supported in CUDA so this is the best we can do for now)
@@ -694,15 +711,15 @@ class Curve {
 };
 
 
-namespace curve_internal {
-    extern __constant__ Curve::VariableHash d_hashes[Curve::MAX_VARIABLES];   // Device array of the hash values of registered variables
-    extern __device__ char* d_variables[Curve::MAX_VARIABLES];                // Device array of pointer to device memory addresses for variable storage
-    extern __constant__ size_t d_sizes[Curve::MAX_VARIABLES];                // Device array of the types of registered variables
-    extern __constant__ unsigned int d_lengths[Curve::MAX_VARIABLES];
-
-    extern __device__ Curve::DeviceError d_curve_error;
-    extern Curve::HostError h_curve_error;
-}  // namespace curve_internal
+//namespace curve_internal {
+//    extern __constant__ Curve::VariableHash d_hashes[Curve::MAX_VARIABLES];   // Device array of the hash values of registered variables
+//    extern __device__ char* d_variables[Curve::MAX_VARIABLES];                // Device array of pointer to device memory addresses for variable storage
+//    extern __constant__ size_t d_sizes[Curve::MAX_VARIABLES];                // Device array of the types of registered variables
+//    extern __constant__ unsigned int d_lengths[Curve::MAX_VARIABLES];
+//
+//    extern __device__ Curve::DeviceError d_curve_error;
+//    extern Curve::HostError h_curve_error;
+//}  // namespace curve_internal
 
 
 /* TEMPLATE HASHING FUNCTIONS */
@@ -745,7 +762,7 @@ __host__ void Curve::unregisterVariable(const char(&variableName)[N]) {
     _unregisterVariableByHash(variable_hash);
 }
 #endif
-
+#ifdef __main_cu__
 /**
 * Device side class implementation
 */
@@ -1079,9 +1096,9 @@ __device__ __forceinline__ void Curve::setArrayVariable(const char(&variableName
 #define curveReportLastDeviceError() { Curve::curvePrintLastDeviceError(__FILE__, __FUNCTION__, __LINE__); }
 
 __device__ __forceinline__ void Curve::printLastDeviceError(const char* file, const char* function, const int line) {
-    if (curve_internal::d_curve_error != DEVICE_ERROR_NO_ERRORS) {
-        printf("%s.%s.%d: cuRVE Device Error %d (%s)\n", file, function, line, (unsigned int)curve_internal::d_curve_error, getDeviceErrorString(curve_internal::d_curve_error));
-    }
+//    if (curve_internal::d_curve_error != DEVICE_ERROR_NO_ERRORS) {
+ //       printf("%s.%s.%d: cuRVE Device Error %d (%s)\n", file, function, line, (unsigned int)curve_internal::d_curve_error, getDeviceErrorString(curve_internal::d_curve_error));
+ //   }
 }
 __device__ __host__ __forceinline__ const char* Curve::getDeviceErrorString(DeviceError e) {
     switch (e) {
@@ -1096,6 +1113,7 @@ __device__ __host__ __forceinline__ const char* Curve::getDeviceErrorString(Devi
     }
 }
 __device__ __forceinline__ Curve::DeviceError Curve::getLastDeviceError() {
-    return curve_internal::d_curve_error;
+    return DEVICE_ERROR_NO_ERRORS;//curve_internal::d_curve_error;
 }
+#endif
 #endif  // INCLUDE_FLAMEGPU_RUNTIME_CURVE_CURVE_H_

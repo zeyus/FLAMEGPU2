@@ -391,7 +391,7 @@ class MsgArray3D::Out {
      */
     const MetaData * const metadata;
 };
-
+#ifdef __main_cu__
 template<typename T, unsigned int N>
 __device__ T MsgArray3D::In::Message::getVariable(const char(&variable_name)[N]) const {
 #if !defined(SEATBELTS) || SEATBELTS
@@ -487,5 +487,5 @@ __device__ inline MsgArray3D::In::Filter::Message& MsgArray3D::In::Filter::Messa
                their_x;
     return *this;
 }
-
+#endif
 #endif  // INCLUDE_FLAMEGPU_RUNTIME_MESSAGING_ARRAY3D_ARRAY3DDEVICE_H_

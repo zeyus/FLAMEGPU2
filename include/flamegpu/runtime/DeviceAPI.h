@@ -299,7 +299,7 @@ class DeviceAPI : public ReadOnlyDeviceAPI{
 
 
 /******************************************************************************************************* Implementation ********************************************************/
-
+#ifdef __main_cu__
 template<typename T, unsigned int N>
 __device__ T ReadOnlyDeviceAPI::getVariable(const char(&variable_name)[N]) {
     // simple indexing assumes index is the thread number (this may change later)
@@ -416,5 +416,5 @@ __device__ void DeviceAPI<MsgIn, MsgOut>::AgentOut::genID() const {
     }
 }
 #endif
-
+#endif
 #endif  // INCLUDE_FLAMEGPU_RUNTIME_DEVICEAPI_H_

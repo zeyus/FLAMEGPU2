@@ -272,7 +272,7 @@ class MsgSpatial2D::Out : public MsgBruteForce::Out {
      */
     __device__ void setLocation(const float &x, const float &y) const;
 };
-
+#ifdef __main_cu__
 template<typename T, unsigned int N>
 __device__ T MsgSpatial2D::In::Filter::Message::getVariable(const char(&variable_name)[N]) const {
 #if !defined(SEATBELTS) || SEATBELTS
@@ -286,7 +286,7 @@ __device__ T MsgSpatial2D::In::Filter::Message::getVariable(const char(&variable
     T value = Curve::getMessageVariable<T>(variable_name, this->_parent.combined_hash, cell_index);
     return value;
 }
-
+#endif
 
 __device__ __forceinline__ MsgSpatial2D::GridPos2D getGridPosition2D(const MsgSpatial2D::MetaData *md, float x, float y) {
     // Clamp each grid coord to 0<=x<dim
@@ -312,6 +312,7 @@ __device__ __forceinline__ unsigned int getHash2D(const MsgSpatial2D::MetaData *
         gridPos[0]);                                      // x
 }
 
+#ifdef __main_cu__
 __device__ inline void MsgSpatial2D::Out::setLocation(const float &x, const float &y) const {
     unsigned int index = (blockDim.x * blockIdx.x) + threadIdx.x;  // + d_message_count;
 
@@ -357,6 +358,6 @@ __device__ inline MsgSpatial2D::In::Filter::Message& MsgSpatial2D::In::Filter::M
     }
     return *this;
 }
-
+#endif
 
 #endif  // INCLUDE_FLAMEGPU_RUNTIME_MESSAGING_SPATIAL2D_SPATIAL2DDEVICE_H_

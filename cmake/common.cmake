@@ -422,7 +422,7 @@ function(add_flamegpu_executable NAME SRC FLAMEGPU_ROOT PROJECT_ROOT IS_EXAMPLE)
     target_link_libraries(${NAME} ${FLAMEGPU_DEPENDENCY_LINK_LIBRARIES})
     
     # Enable RDC for the target
-    set_property(TARGET ${NAME} PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+    set_property(TARGET ${NAME} PROPERTY CUDA_SEPARABLE_COMPILATION OFF)
 
     # Link against the flamegpu2 static library target.
     if (TARGET flamegpu2)

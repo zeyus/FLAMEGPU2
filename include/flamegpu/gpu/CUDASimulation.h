@@ -411,7 +411,7 @@ class CUDASimulation : public Simulation {
     void stepStepFunctions();
     bool stepExitConditions();
 
-
+public:
     /**
      * Struct containing references to the various singletons which may include CUDA code, and therefore can only be initialsed after the deferred arg parsing is completed.
      */
