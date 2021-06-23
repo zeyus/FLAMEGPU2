@@ -75,7 +75,9 @@ __global__ void agent_function_wrapper(
     unsigned int *scanFlag_messageOutput,
     unsigned int *scanFlag_agentOutput) {
 
+#if !defined(__CUDACC_RTC__)
     Curve::initialise_sm();
+#endif
 
 #if !defined(SEATBELTS) || SEATBELTS
     // We place this at the start of shared memory, so we can locate it anywhere in device code without a reference
