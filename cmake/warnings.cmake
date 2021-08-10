@@ -71,6 +71,13 @@ function(EnableCompilerWarnings)
         # CUB 1.9.10 prevents Wreorder being usable on windows. Cannot suppress via diag_suppress pragmas.
         target_compile_options(${ENABLE_COMPILER_WARNINGS_TARGET} PRIVATE "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:--Wreorder>")
     endif()
+
+    # Clang specific suppression warnings
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        # Suppress unused-private-field warnings on Clang, which are falsely emitted in some cases where a private member is used in device code (i.e. ArrayMessage)
+        target_compile_options(${ENABLE_COMPILER_WARNINGS_TARGET} PRIVATE "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-Xcompiler -Wno-unused-private-field>")
+        target_compile_options(${ENABLE_COMPILER_WARNINGS_TARGET} PRIVATE "$<$<COMPILE_LANGUAGE:C,CXX>:-Wno-unused-private-field>")
+    endif()
     # Promote warnings to errors if requested
     if(WARNINGS_AS_ERRORS)
         # OS Specific flags
