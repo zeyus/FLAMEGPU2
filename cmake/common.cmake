@@ -110,6 +110,12 @@ endif()
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set(FLAMEGPU_DEPENDENCY_LINK_LIBRARIES ${FLAMEGPU_DEPENDENCY_LINK_LIBRARIES} "-lstdc++fs")
 endif()
+# Clang requires c++experimental for std::experimental::filesystem. This will be unneccesary once c++14 is dropped
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(FLAMEGPU_DEPENDENCY_LINK_LIBRARIES ${FLAMEGPU_DEPENDENCY_LINK_LIBRARIES} "-lc++experimental")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler -stdlib=libc++")
+endif()
 
 # Logging for jitify compilation
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -DJITIFY_PRINT_LOG")
