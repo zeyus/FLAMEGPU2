@@ -1,3 +1,5 @@
+#include <regex>
+
 #include "flamegpu/model/AgentDescription.h"
 
 #include "flamegpu/model/AgentFunctionDescription.h"
@@ -154,6 +156,85 @@ bool AgentDescription::hasFunction(const std::string &function_name) const {
 }
 bool AgentDescription::isOutputOnDevice() const {
     return agent->isOutputOnDevice();
+}
+
+AgentFunctionDescription& AgentDescription::newRTCFunction(const std::string& function_name, const std::string& func_src) {
+    if (agent->functions.find(function_name) == agent->functions.end()) {
+        // Use Regex to get agent function name, and input/output message type
+        std::regex rgx(R"###(.*FLAMEGPU_AGENT_FUNCTION\([ \t]*(\w+),[ \t]*([:\w]+),[ \t]*([:\w]+)[ \t]*\))###");
+        std::smatch match;
+        if (std::regex_search(func_src, match, rgx)) {
+            if (match.size() == 4) {
+                std::string code_func_name = match[1];  // not yet clear if this is required
+                std::string in_type_name = match[2];
+                std::string out_type_name = match[3];
+                if (in_type_name == "flamegpu::MessageSpatial3D" || in_type_name == "flamegpu::MessageSpatial2D" || out_type_name == "flamegpu::MessageSpatial3D" || out_type_name == "flamegpu::MessageSpatial2D") {
+                    if (agent->variables.find("_auto_sort_bin_index") == agent->variables.end()) {
+                        agent->variables.emplace("_auto_sort_bin_index", Variable(1, std::vector<unsigned int> {0}));
+                    }
+                }
+                // set the runtime agent function source in agent function data
+                std::string func_src_str = std::string(function_name + "_program\n");
+#ifdef OUTPUT_RTC_DYNAMIC_FILES
+                func_src_str.append("#line 1 \"").append(code_func_name).append("_impl.cu\"\n");
+#endif
+                func_src_str.append("#include \"flamegpu/runtime/DeviceAPI.cuh\"\n");
+                // Include the required headers for the input message type.
+                std::string in_type_include_name = in_type_name.substr(in_type_name.find_last_of("::") + 1);
+                func_src_str = func_src_str.append("#include \"flamegpu/runtime/messaging/"+ in_type_include_name + "/" + in_type_include_name + "Device.cuh\"\n");
+                // If the message input and output types do not match, also include the input type
+                if (in_type_name != out_type_name) {
+                    std::string out_type_include_name = out_type_name.substr(out_type_name.find_last_of("::") + 1);
+                    func_src_str = func_src_str.append("#include \"flamegpu/runtime/messaging/"+ out_type_include_name + "/" + out_type_include_name + "Device.cuh\"\n");
+                }
+                // Append line pragma to correct file/line number in same format as OUTPUT_RTC_DYNAMIC_FILES
+#ifndef OUTPUT_RTC_DYNAMIC_FILES
+                func_src_str.append("#line 1 \"").append(code_func_name).append("_impl.cu\"\n");
+#endif
+                // If src begins (\r)\n, trim that
+                // Append the function source
+                if (func_src.find_first_of("\n") <= 1) {
+                    func_src_str.append(func_src.substr(func_src.find_first_of("\n") + 1));
+                } else {
+                    func_src_str.append(func_src);
+                }
+                auto rtn = std::shared_ptr<AgentFunctionData>(new AgentFunctionData(this->agent->shared_from_this(), function_name, func_src_str, in_type_name, out_type_name, code_func_name));
+                agent->functions.emplace(function_name, rtn);
+                return *rtn->description;
+            } else {
+                THROW exception::InvalidAgentFunc("Runtime agent function('%s') is missing FLAMEGPU_AGENT_FUNCTION arguments e.g. (func_name, message_input_type, message_output_type), "
+                    "in AgentDescription::newRTCFunction().",
+                    agent->name.c_str());
+            }
+        } else {
+            THROW exception::InvalidAgentFunc("Runtime agent function('%s') is missing FLAMEGPU_AGENT_FUNCTION, "
+                "in AgentDescription::newRTCFunction().",
+                agent->name.c_str());
+        }
+    }
+    THROW exception::InvalidAgentFunc("Agent ('%s') already contains function '%s', "
+        "in AgentDescription::newRTCFunction().",
+        agent->name.c_str(), function_name.c_str());
+}
+
+AgentFunctionDescription& AgentDescription::newRTCFunctionFile(const std::string& function_name, const std::string& file_path) {
+    if (agent->functions.find(function_name) == agent->functions.end()) {
+        // Load file and forward to regular RTC method
+        std::ifstream file;
+        file.open(file_path);
+        if (file.is_open()) {
+            std::stringstream sstream;
+            sstream << file.rdbuf();
+            const std::string func_src = sstream.str();
+            return newRTCFunction(function_name, func_src);
+        }
+        THROW exception::InvalidFilePath("Unable able to open file '%s', "
+            "in AgentDescription::newRTCFunctionFile().",
+            file_path.c_str());
+    }
+    THROW exception::InvalidAgentFunc("Agent ('%s') already contains function '%s', "
+        "in AgentDescription::newRTCFunctionFile().",
+        agent->name.c_str(), function_name.c_str());
 }
 
 }  // namespace flamegpu
