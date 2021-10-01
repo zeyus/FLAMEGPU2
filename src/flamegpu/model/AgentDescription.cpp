@@ -199,7 +199,7 @@ AgentFunctionDescription& AgentDescription::newRTCFunction(const std::string& fu
                     func_src_str.append(func_src);
                 }
                 auto rtn = std::shared_ptr<AgentFunctionData>(new AgentFunctionData(this->agent->shared_from_this(), function_name, func_src_str, in_type_name, out_type_name, code_func_name));
-                agent->functions.emplace(function_name, rtn);
+                agent->functions.insert({function_name, rtn});  // emplace causes nvhpc with gcc 9 to segfault
                 return *rtn->description;
             } else {
                 THROW exception::InvalidAgentFunc("Runtime agent function('%s') is missing FLAMEGPU_AGENT_FUNCTION arguments e.g. (func_name, message_input_type, message_output_type), "
