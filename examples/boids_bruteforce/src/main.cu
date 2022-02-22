@@ -1,462 +1,135 @@
-#include <cstdio>
-#include <cstdlib>
-#include <iostream>
-#include <fstream>
+// Modified temporary example to demonstrate proof of concept of RTC cuJit patching
 
-#include "flamegpu/flamegpu.h"
+#include <cuda_runtime.h>
+#include <random>
+#include <memory>
 
-/**
- * FLAME GPU 2 implementation of the Boids model, using BruteForce messaging.
- * This is based on the FLAME GPU 1 implementation, but with dynamic generation of agents. 
- * Agents are also clamped to be within the environment bounds, rather than wrapped as in FLAME GPU 1.
- * 
- * @todo - Should the agent's velocity change when it is clamped to the environment?
- */
+#include "flamegpu/util/detail/compute_capability.cuh"
 
+#ifdef _MSC_VER
+#pragma warning(push, 2)
+#include "jitify/jitify.hpp"
+#pragma warning(pop)
+#else
+#include "jitify/jitify.hpp"
+#endif
 
-/**
- * Get the length of a vector
- * @param x x component of the vector
- * @param y y component of the vector
- * @param z z component of the vector
- * @return the length of the vector
- */ 
-FLAMEGPU_HOST_DEVICE_FUNCTION float vec3Length(const float x, const float y, const float z) {
-    return sqrtf(x * x + y * y + z * z);
-}
-
-/**
- * Add a scalar to a vector in-place
- * @param x x component of the vector
- * @param y y component of the vector
- * @param z z component of the vector
- * @param value scalar value to add
- */ 
-FLAMEGPU_HOST_DEVICE_FUNCTION void vec3Add(float &x, float &y, float &z, const float value) {
-    x += value;
-    y += value;
-    z += value;
-}
-
-/**
- * Subtract a scalar from a vector in-place
- * @param x x component of the vector
- * @param y y component of the vector
- * @param z z component of the vector
- * @param value scalar value to subtract
- */ 
-FLAMEGPU_HOST_DEVICE_FUNCTION void vec3Sub(float &x, float &y, float &z, const float value) {
-    x -= value;
-    y -= value;
-    z -= value;
-}
-
-/**
- * Multiply a vector by a scalar value in-place
- * @param x x component of the vector
- * @param y y component of the vector
- * @param z z component of the vector
- * @param multiplier scalar value to multiply by
- */ 
-FLAMEGPU_HOST_DEVICE_FUNCTION void vec3Mult(float &x, float &y, float &z, const float multiplier) {
-    x *= multiplier;
-    y *= multiplier;
-    z *= multiplier;
-}
-
-/**
- * Divide a vector by a scalar value in-place
- * @param x x component of the vector
- * @param y y component of the vector
- * @param z z component of the vector
- * @param divisor scalar value to divide by
- */ 
-FLAMEGPU_HOST_DEVICE_FUNCTION void vec3Div(float &x, float &y, float &z, const float divisor) {
-    x /= divisor;
-    y /= divisor;
-    z /= divisor;
-}
-
-/**
- * Normalize a 3 component vector in-place
- * @param x x component of the vector
- * @param y y component of the vector
- * @param z z component of the vector
- */ 
-FLAMEGPU_HOST_DEVICE_FUNCTION void vec3Normalize(float &x, float &y, float &z) {
-    // Get the length
-    float length = vec3Length(x, y, z);
-    vec3Div(x, y, z, length);
-}
-
-/**
- * Clamp each component of a 3-part position to lie within a minimum and maximum value.
- * Performs the operation in place
- * Unlike the FLAME GPU 1 example, this is a clamping operation, rather than wrapping.
- * @param x x component of the vector
- * @param y y component of the vector
- * @param z z component of the vector
- * @param MIN_POSITION the minimum value for each component
- * @param MAX_POSITION the maximum value for each component
- */
-FLAMEGPU_HOST_DEVICE_FUNCTION void clampPosition(float &x, float &y, float &z, const float MIN_POSITION, const float MAX_POSITION) {
-    x = (x < MIN_POSITION)? MIN_POSITION: x;
-    x = (x > MAX_POSITION)? MAX_POSITION: x;
-
-    y = (y < MIN_POSITION)? MIN_POSITION: y;
-    y = (y > MAX_POSITION)? MAX_POSITION: y;
-
-    z = (z < MIN_POSITION)? MIN_POSITION: z;
-    z = (z > MAX_POSITION)? MAX_POSITION: z;
-}
-
-
-
-/**
- * outputdata agent function for Boid agents, which outputs publicly visible properties to a message list
- */
-FLAMEGPU_AGENT_FUNCTION(outputdata, flamegpu::MessageNone, flamegpu::MessageBruteForce) {
-    // Output each agents publicly visible properties.
-    FLAMEGPU->message_out.setVariable<flamegpu::id_t>("id", FLAMEGPU->getID());
-    FLAMEGPU->message_out.setVariable<float>("x", FLAMEGPU->getVariable<float>("x"));
-    FLAMEGPU->message_out.setVariable<float>("y", FLAMEGPU->getVariable<float>("y"));
-    FLAMEGPU->message_out.setVariable<float>("z", FLAMEGPU->getVariable<float>("z"));
-    FLAMEGPU->message_out.setVariable<float>("fx", FLAMEGPU->getVariable<float>("fx"));
-    FLAMEGPU->message_out.setVariable<float>("fy", FLAMEGPU->getVariable<float>("fy"));
-    FLAMEGPU->message_out.setVariable<float>("fz", FLAMEGPU->getVariable<float>("fz"));
-    return flamegpu::ALIVE;
-}
-/**
- * inputdata agent function for Boid agents, which reads data from neighbouring Boid agents, to perform the boid flocking model.
- */
-FLAMEGPU_AGENT_FUNCTION(inputdata, flamegpu::MessageBruteForce, flamegpu::MessageNone) {
-    // Agent properties in local register
-    const flamegpu::id_t id = FLAMEGPU->getID();
-    // Agent position
-    float agent_x = FLAMEGPU->getVariable<float>("x");
-    float agent_y = FLAMEGPU->getVariable<float>("y");
-    float agent_z = FLAMEGPU->getVariable<float>("z");
-    // Agent velocity
-    float agent_fx = FLAMEGPU->getVariable<float>("fx");
-    float agent_fy = FLAMEGPU->getVariable<float>("fy");
-    float agent_fz = FLAMEGPU->getVariable<float>("fz");
-
-    // Boids percieved center
-    float perceived_centre_x = 0.0f;
-    float perceived_centre_y = 0.0f;
-    float perceived_centre_z = 0.0f;
-    int perceived_count = 0;
-
-    // Boids global velocity matching
-    float global_velocity_x = 0.0f;
-    float global_velocity_y = 0.0f;
-    float global_velocity_z = 0.0f;
-
-    // Total change in velocity
-    float velocity_change_x = 0.f;
-    float velocity_change_y = 0.f;
-    float velocity_change_z = 0.f;
-
-    const float INTERACTION_RADIUS = FLAMEGPU->environment.getProperty<float>("INTERACTION_RADIUS");
-    const float SEPARATION_RADIUS = FLAMEGPU->environment.getProperty<float>("SEPARATION_RADIUS");
-    // Iterate location messages, accumulating relevant data and counts.
-    for (const auto &message : FLAMEGPU->message_in) {
-        // Ignore self messages.
-        if (message.getVariable<flamegpu::id_t>("id") != id) {
-            // Get the message location and velocity.
-            const float message_x = message.getVariable<float>("x");
-            const float message_y = message.getVariable<float>("y");
-            const float message_z = message.getVariable<float>("z");
-
-            // Check interaction radius
-            float separation = vec3Length(agent_x - message_x, agent_y - message_y, agent_z - message_z);
-
-            if (separation < INTERACTION_RADIUS) {
-                // Update the percieved centre
-                perceived_centre_x += message_x;
-                perceived_centre_y += message_y;
-                perceived_centre_z += message_z;
-                perceived_count++;
-
-                // Update percieved velocity matching
-                const float message_fx = message.getVariable<float>("fx");
-                const float message_fy = message.getVariable<float>("fy");
-                const float message_fz = message.getVariable<float>("fz");
-                global_velocity_x += message_fx;
-                global_velocity_y += message_fy;
-                global_velocity_z += message_fz;
-
-                // Update collision centre
-                if (separation < (SEPARATION_RADIUS)) {  // dependant on model size
-                    // Rule 3) Avoid other nearby boids (Separation)
-                    float normalizedSeparation = (separation / SEPARATION_RADIUS);
-                    float invNormSep = (1.0f - normalizedSeparation);
-                    float invSqSep = invNormSep * invNormSep;
-
-                    const float collisionScale = FLAMEGPU->environment.getProperty<float>("COLLISION_SCALE");
-                    velocity_change_x += collisionScale * (agent_x - message_x) * invSqSep;
-                    velocity_change_y += collisionScale * (agent_y - message_y) * invSqSep;
-                    velocity_change_z += collisionScale * (agent_z - message_z) * invSqSep;
-                }
-            }
+#if defined(_DEBUG) || defined(D_DEBUG)
+#define CUDA_CALL(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+#define CUDA_CHECK(location) { gpuAssert(cudaDeviceSynchronize(), __FILE__, __LINE__); }
+#else
+#define CUDA_CALL(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+#define CUDA_CHECK(location) { gpuAssert(cudaPeekAtLastError(), __FILE__, __LINE__); }
+#endif
+inline void gpuAssert(cudaError_t code, const char* file, int line) {
+    if (code != cudaSuccess) {
+        if (line >= 0) {
+            fprintf(stderr, "CUDA Error: %s(%d): %s", file, line, cudaGetErrorString(code));
         }
+        else {
+            fprintf(stderr, "CUDA Error: %s(%d): %s", file, line, cudaGetErrorString(code));
+        }
+        exit(EXIT_FAILURE);
     }
-
-    if (perceived_count) {
-        // Divide positions/velocities by relevant counts.
-        vec3Div(perceived_centre_x, perceived_centre_y, perceived_centre_z, perceived_count);
-        vec3Div(global_velocity_x, global_velocity_y, global_velocity_z, perceived_count);
-
-        // Rule 1) Steer towards perceived centre of flock (Cohesion)
-        float steer_velocity_x = 0.f;
-        float steer_velocity_y = 0.f;
-        float steer_velocity_z = 0.f;
-
-        const float STEER_SCALE = FLAMEGPU->environment.getProperty<float>("STEER_SCALE");
-        steer_velocity_x = (perceived_centre_x - agent_x) * STEER_SCALE;
-        steer_velocity_y = (perceived_centre_y - agent_y) * STEER_SCALE;
-        steer_velocity_z = (perceived_centre_z - agent_z) * STEER_SCALE;
-
-        velocity_change_x += steer_velocity_x;
-        velocity_change_y += steer_velocity_y;
-        velocity_change_z += steer_velocity_z;
-
-        // Rule 2) Match neighbours speeds (Alignment)
-        float match_velocity_x = 0.f;
-        float match_velocity_y = 0.f;
-        float match_velocity_z = 0.f;
-
-        const float MATCH_SCALE = FLAMEGPU->environment.getProperty<float>("MATCH_SCALE");
-        match_velocity_x = global_velocity_x * MATCH_SCALE;
-        match_velocity_y = global_velocity_y * MATCH_SCALE;
-        match_velocity_z = global_velocity_z * MATCH_SCALE;
-
-        velocity_change_x += match_velocity_x - agent_fx;
-        velocity_change_y += match_velocity_y - agent_fy;
-        velocity_change_z += match_velocity_z - agent_fz;
-    }
-
-    // Global scale of velocity change
-    vec3Mult(velocity_change_x, velocity_change_y, velocity_change_z, FLAMEGPU->environment.getProperty<float>("GLOBAL_SCALE"));
-
-    // Update agent velocity
-    agent_fx += velocity_change_x;
-    agent_fy += velocity_change_y;
-    agent_fz += velocity_change_z;
-
-    // Bound velocity
-    float agent_fscale = vec3Length(agent_fx, agent_fy, agent_fz);
-    if (agent_fscale > 1) {
-        vec3Div(agent_fx, agent_fy, agent_fz, agent_fscale);
-    }
-
-    float minSpeed = 0.5f;
-    if (agent_fscale < minSpeed) {
-        // Normalise
-        vec3Div(agent_fx, agent_fy, agent_fz, agent_fscale);
-
-        // Scale to min
-        vec3Mult(agent_fx, agent_fy, agent_fz, minSpeed);
-    }
-
-    // Steer away from walls - Computed post normalization to ensure good avoidance. Prevents constant term getting swamped
-    const float wallInteractionDistance = 0.10f;
-    const float wallSteerStrength = 0.05f;
-    const float minPosition = FLAMEGPU->environment.getProperty<float>("MIN_POSITION");
-    const float maxPosition = FLAMEGPU->environment.getProperty<float>("MAX_POSITION");
-
-    if (agent_x - minPosition < wallInteractionDistance) {
-        agent_fx += wallSteerStrength;
-    }
-    if (agent_y - minPosition < wallInteractionDistance) {
-        agent_fy += wallSteerStrength;
-    }
-    if (agent_z - minPosition < wallInteractionDistance) {
-        agent_fz += wallSteerStrength;
-    }
-
-    if (maxPosition - agent_x < wallInteractionDistance) {
-        agent_fx -= wallSteerStrength;
-    }
-    if (maxPosition - agent_y < wallInteractionDistance) {
-        agent_fy -= wallSteerStrength;
-    }
-    if (maxPosition - agent_z < wallInteractionDistance) {
-        agent_fz -= wallSteerStrength;
-    }
-
-    // Apply the velocity
-    const float TIME_SCALE = FLAMEGPU->environment.getProperty<float>("TIME_SCALE");
-    agent_x += agent_fx * TIME_SCALE;
-    agent_y += agent_fy * TIME_SCALE;
-    agent_z += agent_fz * TIME_SCALE;
-
-    // Bound position
-    clampPosition(agent_x, agent_y, agent_z, FLAMEGPU->environment.getProperty<float>("MIN_POSITION"), FLAMEGPU->environment.getProperty<float>("MAX_POSITION"));
-
-    // Update global agent memory.
-    FLAMEGPU->setVariable<float>("x", agent_x);
-    FLAMEGPU->setVariable<float>("y", agent_y);
-    FLAMEGPU->setVariable<float>("z", agent_z);
-
-    FLAMEGPU->setVariable<float>("fx", agent_fx);
-    FLAMEGPU->setVariable<float>("fy", agent_fy);
-    FLAMEGPU->setVariable<float>("fz", agent_fz);
-
-    return flamegpu::ALIVE;
 }
+
+const char* test_kernel_src = R"###(
+__device__ float input[1];
+__global__ void test_patching(float *output, const size_t len) {
+    for(int i = 0; i < len; ++i)
+        output[i] = input[i];
+}
+)###";
 
 int main(int argc, const char ** argv) {
-    flamegpu::ModelDescription model("Boids_BruteForce");
 
-    {   // Location message
-        flamegpu::MessageBruteForce::Description &message = model.newMessage("location");
-        // A message to hold the location of an agent.
-        message.newVariable<flamegpu::id_t>("id");
-        message.newVariable<float>("x");
-        message.newVariable<float>("y");
-        message.newVariable<float>("z");
-        message.newVariable<float>("fx");
-        message.newVariable<float>("fy");
-        message.newVariable<float>("fz");
+    CUDA_CALL(cudaFree(nullptr));
+
+    // Allocate buffers
+    const size_t INPUT_LEN = 100;
+    float* d_input = nullptr, *d_output = nullptr;
+    float *h_input = nullptr, *h_output = nullptr;
+    CUDA_CALL(cudaMalloc(&d_input, INPUT_LEN * sizeof(float)));
+    CUDA_CALL(cudaMalloc(&d_output, INPUT_LEN * sizeof(float)));
+    h_input = (float*)malloc(INPUT_LEN * sizeof(float));
+    h_output = (float*)malloc(INPUT_LEN * sizeof(float));
+
+    // Fill buffer with random data
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(-1.0, 1.0);
+    for (int i = 0; i < INPUT_LEN; ++i)
+        h_input[i] = dis(gen);
+    CUDA_CALL(cudaMemcpy(d_input, h_input, INPUT_LEN * sizeof(float), cudaMemcpyHostToDevice));
+
+    // Compile the kernel
+   
+    // vector of compiler options for jitify
+    std::vector<std::string> options;
+    std::vector<std::string> headers;
+
+    // Set the compilation architecture target if it was successfully detected.
+    int currentDeviceIdx = 0;
+    cudaError_t status = cudaGetDevice(&currentDeviceIdx);
+    if (status == cudaSuccess) {
+        int arch = flamegpu::util::detail::compute_capability::getComputeCapability(currentDeviceIdx);
+        options.push_back(std::string("--gpu-architecture=compute_" + std::to_string(arch)));
     }
-    {   // Boid agent
-        flamegpu::AgentDescription &agent = model.newAgent("Boid");
-        agent.newVariable<float>("x");
-        agent.newVariable<float>("y");
-        agent.newVariable<float>("z");
-        agent.newVariable<float>("fx");
-        agent.newVariable<float>("fy");
-        agent.newVariable<float>("fz");
-        agent.newFunction("outputdata", outputdata).setMessageOutput("location");
-        agent.newFunction("inputdata", inputdata).setMessageInput("location");
+
+    // jitify to create program (with compilation settings)
+    std::unique_ptr<jitify::experimental::KernelInstantiation> kernel_instance;
+    try {
+        auto program = jitify::experimental::Program(test_kernel_src, headers, options);
+        auto kernel = program.kernel("test_patching");
+        kernel_instance = std::make_unique<jitify::experimental::KernelInstantiation>(kernel, std::vector<std::string>{});
+    } catch (std::runtime_error const&) {
+        fprintf(stderr, "Compilation failed, see stdout.\n");
+        return EXIT_FAILURE;
     }
 
+    // Serialise
+    std::string serialized_kernel = kernel_instance->serialize();
 
-    /**
-     * GLOBALS
-     */
     {
-        flamegpu::EnvironmentDescription &env = model.Environment();
+        // Deserialise with cujit options
+        const unsigned int nopts = 3;
+        CUjit_option opts[3] = { CU_JIT_GLOBAL_SYMBOL_COUNT, CU_JIT_GLOBAL_SYMBOL_NAMES, CU_JIT_GLOBAL_SYMBOL_ADDRESSES };
+        unsigned int SYMBOL_COUNT = 1;
+        const char *SYMBOL_NAMES[1] = { "input" };
+        void *SYMBOL_ADDRESSES[1] = { d_input };
+        void *optvals[3] = { &SYMBOL_COUNT, SYMBOL_NAMES, SYMBOL_ADDRESSES };
+        jitify::experimental::KernelInstantiation patched_kernel_instance =
+        //jitify::experimental::KernelInstantiation::deserialize(serialized_kernel);
+        jitify::experimental::KernelInstantiation::deserialize(serialized_kernel, nopts, opts, optvals);
 
-        // Population size to generate, if no agents are loaded from disk
-        env.newProperty("POPULATION_TO_GENERATE", 4000u);
-
-        // Environment Bounds
-        env.newProperty("MIN_POSITION", -0.5f);
-        env.newProperty("MAX_POSITION", +0.5f);
-
-        // Initialisation parameter(s)
-        env.newProperty("MAX_INITIAL_SPEED", 1.0f);
-        env.newProperty("MIN_INITIAL_SPEED", 0.1f);
-
-        // Interaction radius
-        env.newProperty("INTERACTION_RADIUS", 0.05f);
-        env.newProperty("SEPARATION_RADIUS", 0.01f);
-
-        // Global Scalers
-        env.newProperty("TIME_SCALE", 0.0005f);
-        env.newProperty("GLOBAL_SCALE", 0.15f);
-
-        // Rule scalers
-        env.newProperty("STEER_SCALE", 0.055f);
-        env.newProperty("COLLISION_SCALE", 10.0f);
-        env.newProperty("MATCH_SCALE", 0.015f);
-    }
-
-    /**
-     * Control flow
-     */     
-    {   // Layer #1
-        flamegpu::LayerDescription &layer = model.newLayer();
-        layer.addAgentFunction(outputdata);
-    }
-    {   // Layer #2
-        flamegpu::LayerDescription &layer = model.newLayer();
-        layer.addAgentFunction(inputdata);
-    }
-
-    /**
-     * Create Model Runner
-     */
-    flamegpu::CUDASimulation cudaSimulation(model);
-
-    /**
-     * Create visualisation
-     */
-#ifdef VISUALISATION
-    flamegpu::visualiser::ModelVis &visualisation = cudaSimulation.getVisualisation();
-    {
-        flamegpu::EnvironmentDescription &env = model.Environment();
-        float envWidth = env.getProperty<float>("MAX_POSITION") - env.getProperty<float>("MIN_POSITION");
-        const float INIT_CAM = env.getProperty<float>("MAX_POSITION") * 1.25f;
-        visualisation.setInitialCameraLocation(INIT_CAM, INIT_CAM, INIT_CAM);
-        visualisation.setCameraSpeed(0.001f * envWidth);
-        visualisation.setViewClips(0.00001f, 50);
-        auto &circ_agt = visualisation.addAgent("Boid");
-        // Position vars are named x, y, z; so they are used by default
-        circ_agt.setForwardXVariable("fx");
-        circ_agt.setForwardYVariable("fy");
-        circ_agt.setForwardZVariable("fz");
-        circ_agt.setModel(flamegpu::visualiser::Stock::Models::ICOSPHERE);
-        circ_agt.setModelScale(env.getProperty<float>("SEPARATION_RADIUS")/3.0f);
-    }
-    visualisation.activate();
-#endif
-
-    // Initialisation
-    cudaSimulation.initialise(argc, argv);
-
-    // If no xml model file was is provided, generate a population.
-    if (cudaSimulation.getSimulationConfig().input_file.empty()) {
-        flamegpu::EnvironmentDescription &env = model.Environment();
-        // Uniformly distribute agents within space, with uniformly distributed initial velocity.
-        std::mt19937_64 rngEngine(cudaSimulation.getSimulationConfig().random_seed);
-        std::uniform_real_distribution<float> position_distribution(env.getProperty<float>("MIN_POSITION"), env.getProperty<float>("MAX_POSITION"));
-        std::uniform_real_distribution<float> velocity_distribution(-1, 1);
-        std::uniform_real_distribution<float> velocity_magnitude_distribution(env.getProperty<float>("MIN_INITIAL_SPEED"), env.getProperty<float>("MAX_INITIAL_SPEED"));
-        const unsigned int populationSize = env.getProperty<unsigned int>("POPULATION_TO_GENERATE");
-        flamegpu::AgentVector population(model.Agent("Boid"), populationSize);
-        for (unsigned int i = 0; i < populationSize; i++) {
-            flamegpu::AgentVector::Agent instance = population[i];
-
-            // Agent position in space
-            instance.setVariable<float>("x", position_distribution(rngEngine));
-            instance.setVariable<float>("y", position_distribution(rngEngine));
-            instance.setVariable<float>("z", position_distribution(rngEngine));
-
-            // Generate a random velocity direction
-            float fx = velocity_distribution(rngEngine);
-            float fy = velocity_distribution(rngEngine);
-            float fz = velocity_distribution(rngEngine);
-            // Generate a random speed between 0 and the maximum initial speed
-            float fmagnitude = velocity_magnitude_distribution(rngEngine);
-            // Use the random speed for the velocity.
-            vec3Normalize(fx, fy, fz);
-            vec3Mult(fx, fy, fz, fmagnitude);
-
-            // Set these for the agent.
-            instance.setVariable<float>("fx", fx);
-            instance.setVariable<float>("fy", fy);
-            instance.setVariable<float>("fz", fz);
+        // Execute kernel
+        CUresult a = patched_kernel_instance.configure(1, 1).launch({
+            reinterpret_cast<void*>(&h_output),
+            const_cast<void*>(reinterpret_cast<const void*>(&INPUT_LEN))
+        });
+        if (a != CUresult::CUDA_SUCCESS) {
+            const char* err_str = nullptr;
+            cuGetErrorString(a, &err_str);
+            fprintf(stderr, "Executing instance 1 failed: %s\n", err_str);
+            return EXIT_FAILURE;
         }
-        cudaSimulation.setPopulationData(population);
+        CUDA_CHECK("Launch 1");
     }
 
-    /**
-     * Execution
-     */
-    cudaSimulation.simulate();
+    // Validate result
+    CUDA_CALL(cudaMemcpy(h_output, d_output, INPUT_LEN * sizeof(float), cudaMemcpyDeviceToHost));
+    unsigned int error_count = 0;
+    for (int i = 0; i < INPUT_LEN; ++i)
+        error_count += h_output[i] == h_input[i] ? 0 : 1;
 
+    printf("Test 1 had %u errors!\n", error_count);
 
-    /**
-     * Export Pop
-     */
-    // cudaSimulation.exportData("end.xml");
+    // Deserialise with different cujit options
 
-#ifdef VISUALISATION
-    visualisation.join();
-#endif
+    // Execute kernel
+
+    // Validate result
+
     return 0;
 }
 

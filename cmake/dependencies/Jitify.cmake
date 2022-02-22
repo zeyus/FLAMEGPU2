@@ -9,8 +9,8 @@ cmake_policy(SET CMP0079 NEW)
 # Change the source-dir to allow inclusion via jitify/jitify.hpp rather than jitify.hpp
 FetchContent_Declare(
     jitify
-    GIT_REPOSITORY https://github.com/NVIDIA/jitify.git
-    GIT_TAG        7b724609f7134d3e216678bb20b74edb187fbcaa
+    GIT_REPOSITORY https://github.com/Robadob/jitify.git
+    GIT_TAG        expose_cujit
     SOURCE_DIR     ${FETCHCONTENT_BASE_DIR}/jitify-src/jitify
     GIT_PROGRESS   ON
     # UPDATE_DISCONNECTED   ON
