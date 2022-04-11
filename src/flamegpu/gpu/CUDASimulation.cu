@@ -675,8 +675,8 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
 
     // If any condition kernel needs to be executed, do so, by checking the number of threads from before.
     if (totalThreads > 0) {
-        auto env_shared_lock = this->singletons->environment.getSharedLock();
-        auto env_device_lock = this->singletons->environment.getDeviceSharedLock();
+        //auto env_shared_lock = this->singletons->environment.getSharedLock();
+        //auto env_device_lock = this->singletons->environment.getDeviceSharedLock();
         if (!has_rtc_func_cond) {
             this->singletons->environment.updateDevice(instance_id);
             this->singletons->curve.updateDevice();
@@ -776,8 +776,8 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
         // Ensure that each condition function has finished before unlocking the environment
         // Potentially there might be performance gains within a model by moving this until after the unmapping, although this may block other threads
         this->synchronizeAllStreams();
-        env_shared_lock.unlock();
-        env_device_lock.unlock();
+        //env_shared_lock.unlock();
+        //env_device_lock.unlock();
     }
 
     // Track stream index
@@ -892,8 +892,8 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
 
     // If any condition kernel needs to be executed, do so, by checking the number of threads from before.
     if (totalThreads > 0) {
-        auto env_shared_lock = this->singletons->environment.getSharedLock();
-        auto env_device_lock = this->singletons->environment.getDeviceSharedLock();
+        //auto env_shared_lock = this->singletons->environment.getSharedLock();
+        //auto env_device_lock = this->singletons->environment.getDeviceSharedLock();
         if (!has_rtc_func) {
             this->singletons->environment.updateDevice(instance_id);
             this->singletons->curve.updateDevice();
@@ -1039,8 +1039,8 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
 
         // Ensure that each stream of work has finished before releasing the environment lock.
         this->synchronizeAllStreams();
-        env_shared_lock.unlock();
-        env_device_lock.unlock();
+        //env_shared_lock.unlock();
+        //env_device_lock.unlock();
     }
 
     streamIdx = 0;
