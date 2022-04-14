@@ -1044,11 +1044,12 @@ void CurveRTCHost::updateEnvCache(const char *env_ptr) {
         memcpy(h_data_buffer, env_ptr, EnvironmentManager::MAX_BUFFER_SIZE);
     }
 }
-void CurveRTCHost::updateDevice(const jitify::experimental::KernelInstantiation& instance) {
+void CurveRTCHost::updateDevice(const jitify::experimental::KernelInstantiation& instance, cudaStream_t stream) {
     // The namespace is required here, but not in other uses of getVariableSymbolName.
     std::string cache_var_name = std::string("flamegpu::detail::curve::") + getVariableSymbolName();
     CUdeviceptr d_var_ptr = instance.get_global_ptr(cache_var_name.c_str());
-    gpuErrchkDriverAPI(cuMemcpyHtoD(d_var_ptr, h_data_buffer, data_buffer_size));
+    gpuErrchkDriverAPI(cuMemcpyHtoDAsync(d_var_ptr, h_data_buffer, data_buffer_size, stream));  // Not pinned
+    gpuErrchk(cudaStreamSynchronize(stream));  // Probably not required, this should be occurring in same stream as kernel launch
 }
 
 }  // namespace curve

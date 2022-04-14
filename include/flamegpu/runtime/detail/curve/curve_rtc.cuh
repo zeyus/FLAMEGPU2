@@ -5,6 +5,7 @@
 #include <cstring>
 #include <string>
 #include <cstdio>
+#include <driver_types.h>
 #include <typeindex>
 #include <map>
 
@@ -200,7 +201,7 @@ class CurveRTCHost {
      * Copy h_data_buffer to device
      * @param instance The compiled RTC agent function instance to copy the environment cache to
      */
-    void updateDevice(const jitify::experimental::KernelInstantiation& instance);
+    void updateDevice(const jitify::experimental::KernelInstantiation& instance, cudaStream_t stream);
 
  protected:
    /**

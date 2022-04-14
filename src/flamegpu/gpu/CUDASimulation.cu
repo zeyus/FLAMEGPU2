@@ -667,7 +667,7 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
                 // Sync EnvManager's RTC cache with RTC header's cache
                 rtc_header.updateEnvCache(singletons->environment.getRTCCache(instance_id));
                 // Push RTC header's cache to device
-                rtc_header.updateDevice(cuda_agent.getRTCInstantiation(func_name));
+                rtc_header.updateDevice(cuda_agent.getRTCInstantiation(func_name), getStream(streamIdx));
             }
 
             totalThreads += state_list_size;
@@ -888,7 +888,7 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
             // Sync EnvManager's RTC cache with RTC header's cache
             rtc_header.updateEnvCache(singletons->environment.getRTCCache(instance_id));
             // Push RTC header's cache to device
-            rtc_header.updateDevice(cuda_agent.getRTCInstantiation(func_des->name));
+            rtc_header.updateDevice(cuda_agent.getRTCInstantiation(func_des->name), getStream(streamIdx));
         }
 
         // Count total threads being launched
