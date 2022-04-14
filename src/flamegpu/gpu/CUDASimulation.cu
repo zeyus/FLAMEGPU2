@@ -212,6 +212,11 @@ CUDASimulation::~CUDASimulation() {
 #ifdef VISUALISATION
     visualisation.reset();
 #endif
+
+    // Destroy streams, potentially unsafe in a destructor as it will invoke cuda commands.
+    // Do this once to re-use existing streams rather than per-step.
+    this->destroyStreams();
+
     // If we are the last instance to destruct
     // This doesn't really play nicely if we are passing multi-device CUDASimulations between threads!
     // I think this exists to prevent curve getting left with dead items when exceptions are thrown during the test suite.
@@ -223,13 +228,9 @@ CUDASimulation::~CUDASimulation() {
             // Could mutex it with init simulation cuda stuff, but really seems unlikely
             gpuErrchk(cudaDeviceReset());
             EnvironmentManager::getInstance().purge();
-            detail::curve::Curve::getInstance().purge(getStream(0));
+            detail::curve::Curve::getInstance().purge(nullptr);  // Default stream, device should be free at this point
         }
     }
-
-    // Destroy streams, potentially unsafe in a destructor as it will invoke cuda commands.
-    // Do this once to re-use existing streams rather than per-step.
-    this->destroyStreams();
 
     if (t_device_id != deviceInitialised) {
         gpuErrchk(cudaSetDevice(t_device_id));
