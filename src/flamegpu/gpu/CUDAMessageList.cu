@@ -111,7 +111,7 @@ void CUDAMessageList::zeroDeviceMessageList_async(CUDAMessageMap& memory_map, cu
         const size_t var_size = var.type_size * var.elements;
 
         // set the memory to zero
-        gpuErrchk(cudaMemset(static_cast<char*>(mm.second) + (var_size * skip_offset), 0, var_size * (message.getMaximumListSize() - skip_offset)));
+        gpuErrchk(cudaMemsetAsync(static_cast<char*>(mm.second) + (var_size * skip_offset), 0, var_size * (message.getMaximumListSize() - skip_offset, stream)));
     }
 }
 
