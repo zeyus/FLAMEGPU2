@@ -27,7 +27,7 @@ MessageArray3D::CUDAModelHandler::CUDAModelHandler(CUDAMessage &a)
 void MessageArray3D::CUDAModelHandler::init(CUDAScatter &scatter, unsigned int streamId, cudaStream_t stream) {
     allocateMetaDataDevicePtr(stream);
     // Allocate messages
-    this->sim_message.resize(hd_metadata.length, scatter, streamId);
+    this->sim_message.resize(hd_metadata.length, scatter, stream, streamId);
     this->sim_message.setMessageCount(hd_metadata.length);
     // Zero the output arrays
     auto &read_list = this->sim_message.getReadList();
