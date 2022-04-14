@@ -243,9 +243,9 @@ void CUDAAgent::validateIDCollisions(cudaStream_t stream) const {
     // Sort agent ids into d_keysOut
     void* d_temp_storage = nullptr;
     size_t temp_storage_bytes = 0;
-    gpuErrchk(cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keysIn, d_keysOut, agentCount, stream));
+    gpuErrchk(cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keysIn, d_keysOut, agentCount, 0, sizeof(id_t) * 8, stream));
     gpuErrchk(cudaMalloc(&d_temp_storage, temp_storage_bytes));
-    gpuErrchk(cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keysIn, d_keysOut, agentCount, stream));
+    gpuErrchk(cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keysIn, d_keysOut, agentCount, 0, sizeof(id_t) * 8, stream));
     // Reset d_keysIn
     gpuErrchk(cudaMemsetAsync(d_keysIn, 0, sizeof(id_t) * agentCount, stream));
     // Launch a kernel to set flags if keys overlap their neighbour
