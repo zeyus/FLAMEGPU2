@@ -185,7 +185,7 @@ void CUDAAgent::setPopulationData(const AgentVector& population, const std::stri
     our_state->second->setAgentData(population, scatter, streamId, stream);
     fat_agent->markIDsUnset();
     // Validate that there are no ID collisions
-    validateIDCollisions();
+    validateIDCollisions(stream);
 }
 void CUDAAgent::getPopulationData(AgentVector& population, const std::string& state_name) const {
     // Validate agent state
