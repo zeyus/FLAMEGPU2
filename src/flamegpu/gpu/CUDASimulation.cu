@@ -2074,7 +2074,7 @@ void CUDASimulation::assignAgentIDs() {
         initialiseSingletons();
 
         for (auto &a : agent_map) {
-            a.second->assignIDs(*host_api);  // This is cheap if the CUDAAgent thinks it's IDs are already assigned
+            a.second->assignIDs(*host_api, getStream(0));  // This could be made concurrent, 1 stream per agent
         }
         agent_ids_have_init = true;
     }

@@ -716,8 +716,8 @@ id_t CUDAAgent::nextID(unsigned int count) {
 id_t* CUDAAgent::getDeviceNextID() {
     return fat_agent->getDeviceNextID();
 }
-void CUDAAgent::assignIDs(HostAPI& hostapi) {
-    fat_agent->assignIDs(hostapi);
+void CUDAAgent::assignIDs(HostAPI& hostapi, cudaStream_t stream) {
+    fat_agent->assignIDs(hostapi, stream);
 }
 
 void CUDAAgent::setPopulationVec(const std::string& state_name, const std::shared_ptr<DeviceAgentVector_impl>& d_vec) {

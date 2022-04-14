@@ -287,7 +287,7 @@ class CUDAAgent : public AgentInterface {
      * Assigns IDs to any agents who's ID has the value ID_NOT_SET
      * @param hostapi HostAPI object, this is used to provide cub temp storage
      */
-    void assignIDs(HostAPI &hostapi);
+    void assignIDs(HostAPI &hostapi, cudaStream_t stream);
     /**
      * Used to allow HostAgentAPI to store a persistent DeviceAgentVector
      * @param state_name Agent state to affect
