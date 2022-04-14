@@ -75,8 +75,8 @@ void CUDAMessage::setMessageCount(const unsigned int &_message_count) {
     }
     message_count = _message_count;
 }
-void CUDAMessage::init(CUDAScatter &scatter, const unsigned int &streamId) {
-    specialisation_handler->init(scatter, streamId);
+void CUDAMessage::init(CUDAScatter &scatter, unsigned int streamId, cudaStream_t stream) {
+    specialisation_handler->init(scatter, streamId, stream);
 }
 void CUDAMessage::zeroAllMessageData() {
     if (!message_list) {
@@ -139,7 +139,7 @@ void *CUDAMessage::getReadPtr(const std::string &var_name) {
     }
     return message_list->getReadMessageListVariablePointer(var_name);
 }
-void CUDAMessage::mapWriteRuntimeVariables(const AgentFunctionData& func, const CUDAAgent& cuda_agent, const unsigned int &writeLen, const unsigned int &instance_id) const {
+void CUDAMessage::mapWriteRuntimeVariables(const AgentFunctionData& func, const CUDAAgent& cuda_agent, const unsigned int &writeLen, const unsigned int &instance_id, cudaStream_t stream) const {
     // check that the message list has been allocated
     if (!message_list) {
         THROW exception::InvalidMessageData("Error: Initial message list for message '%s' has not been allocated, "
@@ -184,7 +184,7 @@ void CUDAMessage::mapWriteRuntimeVariables(const AgentFunctionData& func, const 
     }
 
     // Allocate the metadata if required. (This call should now be redundant)
-    specialisation_handler->allocateMetaDataDevicePtr();
+    specialisation_handler->allocateMetaDataDevicePtr(stream);
 }
 
 void CUDAMessage::unmapRuntimeVariables(const AgentFunctionData& func, const unsigned int &instance_id) const {

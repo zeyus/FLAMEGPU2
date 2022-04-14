@@ -688,7 +688,7 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
         }
 
         // Ensure RandomManager is the correct size to accommodate all threads to be launched
-        curandState *d_rng = singletons->rng.resize(totalThreads);  // @todo - stream + sync.
+        curandState *d_rng = singletons->rng.resize(totalThreads, getStream(0));
         // Track which stream to use for concurrency
         streamIdx = 0;
         // Sum the total number of threads being launched in the layer, for rng offsetting.
@@ -855,7 +855,7 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
             // Resize message list if required
             const unsigned int existingMessages = cuda_message.getTruncateMessageListFlag() ? 0 : cuda_message.getMessageCount();
             cuda_message.resize(existingMessages + state_list_size, this->singletons->scatter, streamIdx, existingMessages);
-            cuda_message.mapWriteRuntimeVariables(*func_des, cuda_agent, state_list_size, instance_id);
+            cuda_message.mapWriteRuntimeVariables(*func_des, cuda_agent, state_list_size, instance_id, getStream(streamIdx));
             singletons->scatter.Scan().resize(state_list_size, CUDAScanCompaction::MESSAGE_OUTPUT, streamIdx);
             // Zero the scan flag that will be written to
             if (func_des->message_output_optional)
@@ -908,7 +908,7 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
         }
 
         // Ensure RandomManager is the correct size to accommodate all threads to be launched
-        curandState *d_rng = singletons->rng.resize(totalThreads);
+        curandState *d_rng = singletons->rng.resize(totalThreads, getStream(0));
         // Total threads is now used to provide kernel launches an offset to thread-safe thread-index
         totalThreads = 0;
         streamIdx = 0;
@@ -1645,16 +1645,16 @@ void CUDASimulation::initialiseSingletons() {
         host_api = std::make_unique<HostAPI>(*this, singletons->rng, singletons->scatter, agentOffsets, agentData, macro_env, 0, stream_0);  // Host fns are currently all serial
 
         for (auto &cm : message_map) {
-            cm.second->init(singletons->scatter, 0);
+            cm.second->init(singletons->scatter, 0, getStream(0));
         }
 
         // Populate the environment properties
         if (!submodel) {
             singletons->environment.init(instance_id, *model->environment, isPureRTC);
-            macro_env.init();
+            macro_env.init(stream_0);
         } else {
             singletons->environment.init(instance_id, *model->environment, isPureRTC, mastermodel->getInstanceID(), *submodel->subenvironment);
-            macro_env.init(*submodel->subenvironment, mastermodel->macro_env);
+            macro_env.init(*submodel->subenvironment, mastermodel->macro_env, stream_0);
         }
 
         // Propagate singleton init to submodels

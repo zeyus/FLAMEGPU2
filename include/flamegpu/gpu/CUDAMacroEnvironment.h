@@ -95,7 +95,7 @@ class CUDAMacroEnvironment {
     /**
      * Performs CUDA allocations, and registers CURVE variables
      */
-    void init();
+    void init(cudaStream_t stream);
     /**
      * Performs CUDA allocations, and registers CURVE variables
      * Initialises submodel mappings too
@@ -103,7 +103,7 @@ class CUDAMacroEnvironment {
      * @param master_macro_env The master model's macro env to map sub macro properties with
      * @note This must be called after the master model CUDAMacroEnvironment has init
      */
-    void init(const SubEnvironmentData& mapping, const CUDAMacroEnvironment& master_macro_env);
+    void init(const SubEnvironmentData& mapping, const CUDAMacroEnvironment& master_macro_env, cudaStream_t stream);
     /**
      * Release all CUDA allocations, and unregisters CURVE variables
      */

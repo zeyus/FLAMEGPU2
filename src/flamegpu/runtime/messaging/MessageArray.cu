@@ -23,8 +23,8 @@ MessageArray::CUDAModelHandler::CUDAModelHandler(CUDAMessage &a)
     hd_metadata.length = d.length;
 }
 
-void MessageArray::CUDAModelHandler::init(CUDAScatter &scatter, const unsigned int &streamId) {
-    allocateMetaDataDevicePtr();
+void MessageArray::CUDAModelHandler::init(CUDAScatter &scatter, unsigned int streamId, cudaStream_t stream) {
+    allocateMetaDataDevicePtr(stream);
     // Allocate messages
     this->sim_message.resize(hd_metadata.length, scatter, streamId);
     this->sim_message.setMessageCount(hd_metadata.length);
@@ -38,7 +38,7 @@ void MessageArray::CUDAModelHandler::init(CUDAScatter &scatter, const unsigned i
         gpuErrchk(cudaMemset(read_list.at(var.first), 0, var.second.type_size * var.second.elements * hd_metadata.length));
     }
 }
-void MessageArray::CUDAModelHandler::allocateMetaDataDevicePtr() {
+void MessageArray::CUDAModelHandler::allocateMetaDataDevicePtr(cudaStream_t stream) {
     if (d_metadata == nullptr) {
         gpuErrchk(cudaMalloc(&d_metadata, sizeof(MetaData)));
         gpuErrchk(cudaMemcpy(d_metadata, &hd_metadata, sizeof(MetaData), cudaMemcpyHostToDevice));
@@ -57,7 +57,7 @@ void MessageArray::CUDAModelHandler::freeMetaDataDevicePtr() {
     d_write_flag = nullptr;
     d_write_flag_len = 0;
 }
-void MessageArray::CUDAModelHandler::buildIndex(CUDAScatter &scatter, const unsigned int &streamId, const cudaStream_t &stream) {
+void MessageArray::CUDAModelHandler::buildIndex(CUDAScatter &scatter, unsigned int streamId, cudaStream_t stream) {
     const unsigned int MESSAGE_COUNT = this->sim_message.getMessageCount();
     // Zero the output arrays
     auto &read_list = this->sim_message.getReadList();

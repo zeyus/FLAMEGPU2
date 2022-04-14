@@ -48,13 +48,13 @@ __global__ void atomicHistogram1D(
     bin_sub_index[index] = bin_idx;
 }
 
-void MessageBucket::CUDAModelHandler::init(CUDAScatter &, const unsigned int &) {
-    allocateMetaDataDevicePtr();
+void MessageBucket::CUDAModelHandler::init(CUDAScatter &, unsigned int, cudaStream_t stream) {
+    allocateMetaDataDevicePtr(stream);
     // Set PBM to 0
     gpuErrchk(cudaMemset(hd_data.PBM, 0x00000000, (bucketCount + 1) * sizeof(unsigned int)));
 }
 
-void MessageBucket::CUDAModelHandler::allocateMetaDataDevicePtr() {
+void MessageBucket::CUDAModelHandler::allocateMetaDataDevicePtr(cudaStream_t stream) {
     if (d_data == nullptr) {
         gpuErrchk(cudaMalloc(&d_histogram, (bucketCount + 1) * sizeof(unsigned int)));
         gpuErrchk(cudaMalloc(&hd_data.PBM, (bucketCount + 1) * sizeof(unsigned int)));
@@ -85,7 +85,7 @@ void MessageBucket::CUDAModelHandler::freeMetaDataDevicePtr() {
     }
 }
 
-void MessageBucket::CUDAModelHandler::buildIndex(CUDAScatter &scatter, const unsigned int &streamId, const cudaStream_t &stream) {
+void MessageBucket::CUDAModelHandler::buildIndex(CUDAScatter &scatter, unsigned int streamId, cudaStream_t stream) {
     NVTX_RANGE("MessageBucket::CUDAModelHandler::buildIndex");
     // Cuda operations all occur within the stream, so only a final sync is required.s
     const unsigned int MESSAGE_COUNT = this->sim_message.getMessageCount();

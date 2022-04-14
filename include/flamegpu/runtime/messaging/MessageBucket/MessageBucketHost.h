@@ -35,7 +35,7 @@ class MessageBucket::CUDAModelHandler : public MessageSpecialisationHandler {
     * @param scatter Scatter instance and scan arrays to be used (CUDASimulation::singletons->scatter)
     * @param streamId Index of stream specific structures used
     */
-    void init(CUDAScatter &scatter, const unsigned int &streamId) override;
+    void init(CUDAScatter &scatter, unsigned int streamId, cudaStream_t stream) override;
     /**
      * Reconstructs the partition boundary matrix
      * This should be called before reading newly output messages
@@ -43,12 +43,12 @@ class MessageBucket::CUDAModelHandler : public MessageSpecialisationHandler {
      * @param streamId The stream index to use for accessing stream specific resources such as scan compaction arrays and buffers
      * @param stream CUDA stream to be used for async CUDA operations
      */
-    void buildIndex(CUDAScatter &scatter, const unsigned int &streamId, const cudaStream_t &stream) override;
+    void buildIndex(CUDAScatter &scatter, unsigned int streamId, cudaStream_t stream) override;
     /**
     * Allocates memory for the constructed index.
     * The memory allocation is checked by build index.
     */
-    void allocateMetaDataDevicePtr() override;
+    void allocateMetaDataDevicePtr(cudaStream_t stream) override;
     /**
     * Releases memory for the constructed index.
     */

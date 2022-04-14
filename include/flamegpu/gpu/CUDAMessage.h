@@ -63,7 +63,7 @@ class CUDAMessage {
      * @param scatter Scatter instance and scan arrays to be used (CUDASimulation::singletons->scatter)
      * @param streamId Index of stream specific structures used
      */
-    void init(CUDAScatter &scatter, const unsigned int &streamId);
+    void init(CUDAScatter &scatter, unsigned int streamId, cudaStream_t stream);
     /**
      * Updates message_count to equal newSize, internally reallocates buffer space if more space is required
      * @param newSize The number of messages that the buffer should be capable of storing
@@ -89,7 +89,7 @@ class CUDAMessage {
      * @param instance_id The CUDASimulation instance_id of the parent instance. This is added to the hash, to differentiate instances
      * @note swap() or scatter() should be called after the agent function has written messages
      */
-    void mapWriteRuntimeVariables(const AgentFunctionData& func, const CUDAAgent& cuda_agent, const unsigned int &writeLen, const unsigned int &instance_id) const;
+    void mapWriteRuntimeVariables(const AgentFunctionData& func, const CUDAAgent& cuda_agent, const unsigned int &writeLen, const unsigned int &instance_id, cudaStream_t stream) const;
     /**
      * Uses the cuRVE runtime to unmap the variables used by the agent function to the cuRVE
      * library so that they are unavailable to be accessed by name within an agent function.
