@@ -203,10 +203,6 @@ CUDASimulation::~CUDASimulation() {
         singletons = nullptr;
     }
 
-    // Destroy streams, potentially unsafe in a destructor as it will invoke cuda commands.
-    // Do this once to re-use existing streams rather than per-step.
-    this->destroyStreams();
-
     // We must explicitly delete all cuda members before we cuda device reset
     agent_map.clear();
     message_map.clear();
@@ -227,9 +223,14 @@ CUDASimulation::~CUDASimulation() {
             // Could mutex it with init simulation cuda stuff, but really seems unlikely
             gpuErrchk(cudaDeviceReset());
             EnvironmentManager::getInstance().purge();
-            detail::curve::Curve::getInstance().purge();
+            detail::curve::Curve::getInstance().purge(getStream(0));
         }
     }
+
+    // Destroy streams, potentially unsafe in a destructor as it will invoke cuda commands.
+    // Do this once to re-use existing streams rather than per-step.
+    this->destroyStreams();
+
     if (t_device_id != deviceInitialised) {
         gpuErrchk(cudaSetDevice(t_device_id));
     }
@@ -1612,11 +1613,13 @@ void CUDASimulation::initialiseSingletons() {
         std::shared_lock<std::shared_timed_mutex> lock(adm);
         ++(adi);
         // Check if device has been reset
+        cudaStream_t stream_0 = getStream(0);
         unsigned int DEVICE_HAS_RESET_CHECK = 0;
-        gpuErrchk(cudaMemcpyFromSymbol(&DEVICE_HAS_RESET_CHECK, DEVICE_HAS_RESET, sizeof(unsigned int)));
+        gpuErrchk(cudaMemcpyFromSymbolAsync(&DEVICE_HAS_RESET_CHECK, DEVICE_HAS_RESET, sizeof(unsigned int), 0, cudaMemcpyDeviceToHost, stream_0));
+        gpuErrchk(cudaStreamSynchronize(stream_0));
         if (DEVICE_HAS_RESET_CHECK == DEVICE_HAS_RESET_FLAG) {
             // Device has been reset, purge host mirrors of static objects/singletons
-            detail::curve::Curve::getInstance().purge();
+            detail::curve::Curve::getInstance().purge(stream_0);
             if (singletons) {
                 singletons->rng.purge();
                 singletons->scatter.purge();
@@ -1625,6 +1628,7 @@ void CUDASimulation::initialiseSingletons() {
             macro_env.purge();
             // Reset flag
             DEVICE_HAS_RESET_CHECK = 0;  // Any value that doesnt match DEVICE_HAS_RESET_FLAG
+            // This SHOULD be a synchronisation point for the device (e.g. default stream)
             gpuErrchk(cudaMemcpyToSymbol(DEVICE_HAS_RESET, &DEVICE_HAS_RESET_CHECK, sizeof(unsigned int)));
         }
         lock.unlock();
@@ -1638,7 +1642,7 @@ void CUDASimulation::initialiseSingletons() {
         singletons->rng.reseed(getSimulationConfig().random_seed);
 
         // Pass created RandomManager to host api
-        host_api = std::make_unique<HostAPI>(*this, singletons->rng, singletons->scatter, agentOffsets, agentData, macro_env, 0, getStream(0));  // Host fns are currently all serial
+        host_api = std::make_unique<HostAPI>(*this, singletons->rng, singletons->scatter, agentOffsets, agentData, macro_env, 0, stream_0);  // Host fns are currently all serial
 
         for (auto &cm : message_map) {
             cm.second->init(singletons->scatter, 0);
