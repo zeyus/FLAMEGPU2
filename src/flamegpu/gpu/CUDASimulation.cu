@@ -1412,7 +1412,7 @@ void CUDASimulation::setPopulationData(AgentVector& population, const std::strin
             population.getAgentName().c_str());
     }
     // This call hierarchy validates agent desc matches and state is valid
-    it->second->setPopulationData(population, state_name, this->singletons->scatter, 0, 0);  // Streamid shouldn't matter here, also using default stream.
+    it->second->setPopulationData(population, state_name, this->singletons->scatter, 0, getStream(0));  // Streamid shouldn't matter here
 #ifdef VISUALISATION
     if (visualisation) {
         visualisation->updateBuffers();

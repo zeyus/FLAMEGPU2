@@ -215,7 +215,7 @@ __global__ void generateCollisionFlags(const id_t* d_sortedKeys, id_t* d_flagsOu
         }
     }
 }
-void CUDAAgent::validateIDCollisions() const {
+void CUDAAgent::validateIDCollisions(cudaStream_t stream) const {
     NVTX_RANGE("CUDAAgent::validateIDCollisions");
     // All data is on device, so use a device technique to check for collisions
     // Sort agent IDs, have a simple kernel check for neighbouring ID collisions to set a flag
@@ -237,33 +237,33 @@ void CUDAAgent::validateIDCollisions() const {
     ptrdiff_t buffOffset = 0;
     for (const auto& s : state_map) {
         const unsigned int t_size = s.second->getSize();
-        gpuErrchk(cudaMemcpy(d_keysIn + buffOffset, s.second->getVariablePointer(ID_VARIABLE_NAME), t_size * sizeof(id_t), cudaMemcpyDeviceToDevice));
+        gpuErrchk(cudaMemcpyAsync(d_keysIn + buffOffset, s.second->getVariablePointer(ID_VARIABLE_NAME), t_size * sizeof(id_t), cudaMemcpyDeviceToDevice, stream));
         buffOffset += t_size;
     }
     // Sort agent ids into d_keysOut
     void* d_temp_storage = nullptr;
     size_t temp_storage_bytes = 0;
-    gpuErrchk(cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keysIn, d_keysOut, agentCount));
+    gpuErrchk(cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keysIn, d_keysOut, agentCount, stream));
     gpuErrchk(cudaMalloc(&d_temp_storage, temp_storage_bytes));
-    gpuErrchk(cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keysIn, d_keysOut, agentCount));
+    gpuErrchk(cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keysIn, d_keysOut, agentCount, stream));
     // Reset d_keysIn
-    gpuErrchk(cudaMemset(d_keysIn, 0, sizeof(id_t) * agentCount));
+    gpuErrchk(cudaMemsetAsync(d_keysIn, 0, sizeof(id_t) * agentCount, stream));
     // Launch a kernel to set flags if keys overlap their neighbour
     const unsigned int blockSize = 1024;
     const unsigned int blocks = ((agentCount-1) / blockSize) + 1;
-    generateCollisionFlags<<<blocks, blockSize>>>(d_keysOut, d_keysIn, agentCount-1, ID_NOT_SET);
+    generateCollisionFlags<<<blocks, blockSize, 0, stream>>>(d_keysOut, d_keysIn, agentCount-1, ID_NOT_SET);
     gpuErrchkLaunch();
     // Check whether any flags were set
     size_t temp_storage_bytes2 = 0;
-    gpuErrchk(cub::DeviceReduce::Sum(nullptr, temp_storage_bytes2, d_keysIn, d_keysOut, agentCount - 1));
+    gpuErrchk(cub::DeviceReduce::Sum(nullptr, temp_storage_bytes2, d_keysIn, d_keysOut, agentCount - 1, stream));
     if (temp_storage_bytes2 > temp_storage_bytes) {
         gpuErrchk(cudaFree(d_temp_storage));
         temp_storage_bytes = temp_storage_bytes2;
         gpuErrchk(cudaMalloc(&d_temp_storage, temp_storage_bytes));
     }
-    gpuErrchk(cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, d_keysIn, d_keysOut, agentCount - 1));
+    gpuErrchk(cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, d_keysIn, d_keysOut, agentCount - 1, stream));
     id_t flagsSet = 0;
-    gpuErrchk(cudaMemcpy(&flagsSet, d_keysOut, sizeof(id_t), cudaMemcpyDeviceToHost));
+    gpuErrchk(cudaMemcpyAsync(&flagsSet, d_keysOut, sizeof(id_t), cudaMemcpyDeviceToHost, stream));
     // Cleanup
     gpuErrchk(cudaFree(d_temp_storage));
     gpuErrchk(cudaFree(d_keysIn));
@@ -274,6 +274,7 @@ void CUDAAgent::validateIDCollisions() const {
             "in CUDAAgent::validateIDCollisions()\n",
             static_cast<unsigned int>(flagsSet), agent_description.name.c_str());
     }
+    gpuErrchk(cudaStreamSynchronize(stream));
 }
 /**
  * Returns the number of alive and active agents in the named state

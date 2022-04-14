@@ -310,7 +310,7 @@ class CUDAAgent : public AgentInterface {
      * Validates all IDs for contained agents, if any share an ID (which is not ID_NOT_SET) an exception is thrown
      * @throws exception::AgentIDCollision If the contained agent populations contain multiple agents with the same ID
      */
-    void validateIDCollisions() const;
+    void validateIDCollisions(cudaStream_t stream) const;
     /**
      * Sums the size required for all variables
      */
