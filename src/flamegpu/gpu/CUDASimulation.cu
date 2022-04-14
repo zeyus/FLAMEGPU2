@@ -855,7 +855,7 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
             CUDAMessage& cuda_message = getCUDAMessage(outpMessage_name);
             // Resize message list if required
             const unsigned int existingMessages = cuda_message.getTruncateMessageListFlag() ? 0 : cuda_message.getMessageCount();
-            cuda_message.resize(existingMessages + state_list_size, this->singletons->scatter, streamIdx, existingMessages);
+            cuda_message.resize(existingMessages + state_list_size, this->singletons->scatter, getStream(streamIdx), streamIdx, existingMessages);  // This could have it's internal syncs delayed
             cuda_message.mapWriteRuntimeVariables(*func_des, cuda_agent, state_list_size, instance_id, getStream(streamIdx));
             singletons->scatter.Scan().resize(state_list_size, CUDAScanCompaction::MESSAGE_OUTPUT, streamIdx);
             // Zero the scan flag that will be written to
@@ -1078,7 +1078,7 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
                 std::string outpMessage_name = om->name;
                 CUDAMessage& cuda_message = getCUDAMessage(outpMessage_name);
                 cuda_message.unmapRuntimeVariables(*func_des, instance_id);
-                cuda_message.swap(func_des->message_output_optional, state_list_size, this->singletons->scatter, streamIdx);
+                cuda_message.swap(func_des->message_output_optional, state_list_size, this->singletons->scatter, getStream(streamIdx), streamIdx);
                 cuda_message.clearTruncateMessageListFlag();
                 cuda_message.setPBMConstructionRequiredFlag();
             }

@@ -71,7 +71,7 @@ class CUDAMessage {
      * @param streamId Index of stream specific structures used
      * @param keepLen Number of existing messages worth of data to retain through the resize
      */
-    void resize(unsigned int newSize, CUDAScatter &scatter, const unsigned int &streamId, const unsigned int &keepLen = 0);
+    void resize(unsigned int newSize, CUDAScatter &scatter, cudaStream_t stream, unsigned int streamId, unsigned int keepLen = 0);
     /**
      * Uses the cuRVE runtime to map the variables used by the agent function to the cuRVE library so that can be accessed by name within a n agent function
      * The read runtime variables are to be used when reading messages
@@ -108,7 +108,7 @@ class CUDAMessage {
      * @param streamId Index of stream specific structures used
      * @throw exception::InvalidCudaMessage If this is called before the internal buffers have been allocated
      */
-    void swap(bool isOptional, const unsigned int &newMessageCount, CUDAScatter &scatter, const unsigned int &streamId);
+    void swap(bool isOptional, unsigned int newMessageCount, CUDAScatter &scatter, cudaStream_t stream, unsigned int streamId);
     /**
      * Basic list swap with no additional actions
      */
@@ -132,7 +132,7 @@ class CUDAMessage {
     /** 
      * Zero all message variable data.
      */
-    void zeroAllMessageData();
+    void zeroAllMessageData(cudaStream_t stream);
 
  private:
      /**
