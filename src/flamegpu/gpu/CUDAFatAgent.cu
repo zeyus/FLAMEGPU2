@@ -362,7 +362,8 @@ void CUDAFatAgent::assignIDs(HostAPI& hostapi, cudaStream_t stream) {
             }
             hostapi.resizeOutputSpace<id_t>();
             gpuErrchk(cub::DeviceReduce::Max(hostapi.d_cub_temp, hostapi.d_cub_temp_size, static_cast<id_t*>(vb->data), reinterpret_cast<id_t*>(hostapi.d_output_space), s->getSize(), stream));
-            gpuErrchk(cudaMemcpy(&h_max, hostapi.d_output_space, sizeof(id_t), cudaMemcpyDeviceToHost));
+            gpuErrchk(cudaMemcpyAsync(&h_max, hostapi.d_output_space, sizeof(id_t), cudaMemcpyDeviceToHost, stream));
+            gpuErrchk(cudaStreamSynchronize(stream));
             _nextID = std::max(_nextID, h_max + 1);
         }
     }
