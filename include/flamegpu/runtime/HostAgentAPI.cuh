@@ -300,7 +300,7 @@ class HostAgentAPI {
      * @param length Length of the buffer (how many unsigned ints can it hold)
      * @param stream CUDA stream to be used for async CUDA operations
      */
-    static void fillTIDArray(unsigned int *d_buffer, const unsigned int &length, const cudaStream_t &stream);
+    static void fillTIDArray(unsigned int *d_buffer, unsigned int length, cudaStream_t stream);
     /**
      * Sorts a buffer by the positions array, used for multi variable agent sorts
      * @param dest Device pointer to buffer for sorted data to be placed
@@ -311,6 +311,21 @@ class HostAgentAPI {
      * @param stream CUDA stream to be used for async CUDA operations
      */
     static void sortBuffer(void *dest, void*src, unsigned int *position, const size_t &typeLen, const unsigned int &length, const cudaStream_t &stream);
+    /**
+     * Sorts agents according to the named variable
+     * @param variable The agent variable to sort the agents according to
+     * @param order Whether the agents should be sorted in ascending or descending order of the variable
+     * @param beginBit Advanced Option, see note
+     * @param endBit Advanced Option, see note
+     * @tparam VarT The type of the variable as specified in the model description hierarchy
+     * @throws exception::UnsupportedVarType Array variables are not supported
+     * @throws exception::InvalidAgentVar If the agent does not contain a variable of the same name
+     * @throws exception::InvalidVarType If the passed variable type does not match that specified in the model description hierarchy
+     * @note An optional bit subrange [begin_bit, end_bit) of differentiating variable bits can be specified. This can reduce overall sorting overhead and yield a corresponding performance improvement.
+     * @note The sort provides no guarantee of stability
+     */
+    template<typename VarT>
+    void sort_async(const std::string& variable, Order order, int beginBit, int endBit, cudaStream_t stream, unsigned int streamId);
     /**
      * Parent HostAPI
      */
@@ -623,12 +638,16 @@ OutT HostAgentAPI::transformReduce(const std::string &variable, transformOperato
 
 template<typename VarT>
 void HostAgentAPI::sort(const std::string &variable, Order order, int beginBit, int endBit) {
+    sort_async<VarT>(variable, order, beginBit, endBit, nullptr, 0);
+    gpuErrchk(cudaStreamSynchronize(nullptr));
+}
+template<typename VarT>
+void HostAgentAPI::sort_async(const std::string & variable, Order order, int beginBit, int endBit, cudaStream_t stream, unsigned int streamId) {
     std::shared_ptr<DeviceAgentVector_impl> population = agent.getPopulationVec(stateName);
     if (population) {
         // If the user has a DeviceAgentVector out, sync changes
         population->syncChanges();
     }
-    const unsigned int streamId = 0;
     auto &scatter = api.agentModel.singletons->scatter;
     auto &scan = scatter.Scan();
     // Check variable is valid
@@ -654,33 +673,34 @@ void HostAgentAPI::sort(const std::string &variable, Order order, int beginBit, 
     unsigned int *vals_in = scan.Config(CUDAScanCompaction::Type::MESSAGE_OUTPUT, streamId).d_ptrs.scan_flag;
     unsigned int *vals_out = scan.Config(CUDAScanCompaction::Type::MESSAGE_OUTPUT, streamId).d_ptrs.position;
     // Create array of TID (use scanflag_death.position)
-    fillTIDArray(vals_in, agentCount, 0);  // @todo - use a non default stream
+    fillTIDArray(vals_in, agentCount, stream);
     // Create array of agent values (use scanflag_death.scan_flag)
-    gpuErrchk(cudaMemcpy(keys_in, var_ptr, total_variable_buffer_size, cudaMemcpyDeviceToDevice));
+    gpuErrchk(cudaMemcpyAsync(keys_in, var_ptr, total_variable_buffer_size, cudaMemcpyDeviceToDevice, stream));
     // Check if we need to resize cub storage
     const HostAPI::CUB_Config cc = { HostAPI::SORT, typeid(VarT).hash_code() };
     if (api.tempStorageRequiresResize(cc, agentCount)) {
         // Resize cub storage
         size_t tempByte = 0;
         if (order == Asc) {
-            gpuErrchk(cub::DeviceRadixSort::SortPairs(nullptr, tempByte, keys_in, keys_out, vals_in, vals_out, agentCount, beginBit, endBit));
+            gpuErrchk(cub::DeviceRadixSort::SortPairs(nullptr, tempByte, keys_in, keys_out, vals_in, vals_out, agentCount, beginBit, endBit, stream));
         } else {
-            gpuErrchk(cub::DeviceRadixSort::SortPairsDescending(nullptr, tempByte, keys_in, keys_out, vals_in, vals_out, agentCount, beginBit, endBit));
+            gpuErrchk(cub::DeviceRadixSort::SortPairsDescending(nullptr, tempByte, keys_in, keys_out, vals_in, vals_out, agentCount, beginBit, endBit, stream));
         }
         api.resizeTempStorage(cc, agentCount, tempByte);
     }
     // pair sort
     if (order == Asc) {
-        gpuErrchk(cub::DeviceRadixSort::SortPairs(api.d_cub_temp, api.d_cub_temp_size, keys_in, keys_out, vals_in, vals_out, agentCount, beginBit, endBit));
+        gpuErrchk(cub::DeviceRadixSort::SortPairs(api.d_cub_temp, api.d_cub_temp_size, keys_in, keys_out, vals_in, vals_out, agentCount, beginBit, endBit, stream));
     } else {
-        gpuErrchk(cub::DeviceRadixSort::SortPairsDescending(api.d_cub_temp, api.d_cub_temp_size, keys_in, keys_out, vals_in, vals_out, agentCount, beginBit, endBit));
+        gpuErrchk(cub::DeviceRadixSort::SortPairsDescending(api.d_cub_temp, api.d_cub_temp_size, keys_in, keys_out, vals_in, vals_out, agentCount, beginBit, endBit, stream));
     }
     // Scatter all agent variables
-    api.agentModel.agent_map.at(agentDesc.name)->scatterSort(stateName, scatter, streamId, 0);  // @todo use a per simulation stream?
+    api.agentModel.agent_map.at(agentDesc.name)->scatterSort(stateName, scatter, streamId, stream);
     if (population) {
         // If the user has a DeviceAgentVector out, purge cache so it redownloads new data on next use
         population->purgeCache();
     }
+    gpuErrchk(cudaStreamSynchronize(stream)); // Redudannt, bc scatterSort above has sync
 }
 
 

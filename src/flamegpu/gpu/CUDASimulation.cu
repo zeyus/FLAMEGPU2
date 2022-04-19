@@ -292,13 +292,6 @@ void CUDASimulation::exitFunctions() {
     }
 }
 
-__global__ void spatialSortInitToThreadIndex(unsigned int *output, unsigned int threadCount) {
-    const unsigned int TID = blockIdx.x * blockDim.x + threadIdx.x;
-    if (TID < threadCount) {
-        output[TID] = TID;
-    }
-}
-
 namespace detail {
 template <typename T> struct Dims {
     T x;
@@ -435,7 +428,7 @@ void CUDASimulation::determineAgentsToSort() {
 }
 
 
-void CUDASimulation::spatialSortAgent(const std::string& funcName, const std::string& agentName, const std::string& state, const int mode) {
+void CUDASimulation::spatialSortAgent_async(const std::string& funcName, const std::string& agentName, const std::string& state, const int mode, cudaStream_t stream, unsigned int streamId) {
     // Fetch the appropriate message name
     CUDAAgent& cuda_agent = getCUDAAgent(agentName);
 
@@ -506,29 +499,28 @@ void CUDASimulation::spatialSortAgent(const std::string& funcName, const std::st
     gridSize = (state_list_size + blockSize - 1) / blockSize;
 
     unsigned int sm_size = 0;
-    unsigned int streamIdx = 0;
 #if !defined(SEATBELTS) || SEATBELTS
-    auto *error_buffer = this->singletons->exception.getDevicePtr(streamIdx, this->getStream(streamIdx));
+    auto *error_buffer = this->singletons->exception.getDevicePtr(streamId, stream);
     sm_size = sizeof(error_buffer);
 #endif
 
     // Launch kernel
     if (xyzPtr) {
-        calculateSpatialHashFloat3<<<gridSize, blockSize, sm_size, this->getStream(streamIdx)>>>(reinterpret_cast<float*>(xyzPtr),
+        calculateSpatialHashFloat3<<<gridSize, blockSize, sm_size, stream>>>(reinterpret_cast<float*>(xyzPtr),
             reinterpret_cast<unsigned int*>(binIndexPtr),
             envMin,
             envWidth,
             gridDim,
             state_list_size);
     } else if (xyPtr) {
-        calculateSpatialHashFloat2<<<gridSize, blockSize, sm_size, this->getStream(streamIdx)>>>(reinterpret_cast<float*>(xyPtr),
+        calculateSpatialHashFloat2<<<gridSize, blockSize, sm_size, stream>>>(reinterpret_cast<float*>(xyPtr),
             reinterpret_cast<unsigned int*>(binIndexPtr),
             envMin,
             envWidth,
             gridDim,
             state_list_size);
     } else {
-        calculateSpatialHash<<<gridSize, blockSize, sm_size, this->getStream(streamIdx)>>>(reinterpret_cast<float*>(xPtr),
+        calculateSpatialHash<<<gridSize, blockSize, sm_size, stream>>>(reinterpret_cast<float*>(xPtr),
             reinterpret_cast<float*>(yPtr),
             reinterpret_cast<float*>(zPtr),
             reinterpret_cast<unsigned int*>(binIndexPtr),
@@ -540,7 +532,9 @@ void CUDASimulation::spatialSortAgent(const std::string& funcName, const std::st
     gpuErrchkLaunch();
 
     assert(host_api);
-    host_api->agent(agentName).sort<unsigned int>("_auto_sort_bin_index", HostAgentAPI::Asc);
+    // Calculate max bit
+    const int max_bit = static_cast<int>(ceil(log2(gridDim.x * gridDim.y * gridDim.z)));
+    host_api->agent(agentName).sort_async<unsigned int>("_auto_sort_bin_index", HostAgentAPI::Asc, 0, max_bit, stream, streamId);
 }
 
 bool CUDASimulation::step() {
@@ -630,13 +624,14 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
         auto func_agent = func_des->parent.lock();
         if ((func_agent->sortPeriod != 0) && (step_count % func_agent->sortPeriod == 0)) {
             if (sortTriggers3D.find(func_des->name) != sortTriggers3D.end()) {
-                this->spatialSortAgent(func_des->name, func_agent->name, func_des->initial_state, Agent3D);
-            }
-            if (sortTriggers2D.find(func_des->name) != sortTriggers2D.end()) {
-                this->spatialSortAgent(func_des->name, func_agent->name, func_des->initial_state, Agent2D);
+                this->spatialSortAgent_async(func_des->name, func_agent->name, func_des->initial_state, Agent3D, getStream(streamIdx), streamIdx);
+            } else if (sortTriggers2D.find(func_des->name) != sortTriggers2D.end()) {
+                this->spatialSortAgent_async(func_des->name, func_agent->name, func_des->initial_state, Agent2D, getStream(streamIdx), streamIdx);
             }
         }
+        ++streamIdx;
     }
+    streamIdx = 0;
 
     // Map agent memory
     bool has_rtc_func_cond = false;

@@ -26,7 +26,7 @@ __global__ void initToThreadIndex(unsigned int *output, unsigned int threadCount
     }
 }
 
-void HostAgentAPI::fillTIDArray(unsigned int *buffer, const unsigned int &threadCount, const cudaStream_t &stream) {
+void HostAgentAPI::fillTIDArray(unsigned int *buffer, unsigned int threadCount, cudaStream_t stream) {
     initToThreadIndex<<<(threadCount/512)+1, 512, 0, stream>>>(buffer, threadCount);
     gpuErrchkLaunch();
 }
