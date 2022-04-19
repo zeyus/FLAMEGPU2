@@ -13,13 +13,13 @@
 namespace flamegpu {
 
 /**
- * Internal namespace to hide __constant__ declarations from modeller
+ * Internal namespace to hide __device__ declarations from modeller
  */
 namespace detail {
     /**
      * Managed by HostEnvironment, holds all environment properties
      */
-    __constant__ char c_envPropBuffer[EnvironmentManager::MAX_BUFFER_SIZE];
+    __device__ char c_envPropBuffer[EnvironmentManager::MAX_BUFFER_SIZE];
 }  // namespace detail
 
 std::mutex EnvironmentManager::instance_mutex;

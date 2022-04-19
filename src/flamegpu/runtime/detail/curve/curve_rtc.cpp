@@ -376,7 +376,7 @@ void CurveRTCHost::initHeaderEnvironment() {
     messageIn_data_offset = data_buffer_size;     data_buffer_size += messageIn_variables.size() * sizeof(void*);
     newAgent_data_offset = data_buffer_size;  data_buffer_size += newAgent_variables.size() * sizeof(void*);
     envMacro_data_offset = data_buffer_size;  data_buffer_size += RTCEnvMacroProperties.size() * sizeof(void*);
-    variables << "__constant__  char " << getVariableSymbolName() << "[" << data_buffer_size << "];\n";
+    variables << "__device__  char " << getVariableSymbolName() << "[" << data_buffer_size << "];\n";
     setHeaderPlaceholder("$DYNAMIC_VARIABLES", variables.str());
     // generate Environment::get func implementation ($DYNAMIC_ENV_GETVARIABLE_IMPL)
     {

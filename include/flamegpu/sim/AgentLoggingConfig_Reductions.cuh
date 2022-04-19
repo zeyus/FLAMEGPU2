@@ -38,7 +38,7 @@ struct standard_deviation_subtract_mean_impl {
         __host__ __device__ OutT operator()(const InT &a) const;
     };
 };
-extern __constant__ double STANDARD_DEVIATION_MEAN;
+extern __device__ double STANDARD_DEVIATION_MEAN;
 extern std::mutex STANDARD_DEVIATION_MEAN_mutex;
 extern standard_deviation_add_impl standard_deviation_add;
 extern standard_deviation_subtract_mean_impl standard_deviation_subtract_mean;

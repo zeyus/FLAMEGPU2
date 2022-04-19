@@ -717,7 +717,7 @@ class EnvironmentManager {
      */
     void addRTCOffset(const NamePair &name);
     /**
-     * Device pointer to the environment property buffer in __constant__ memory
+     * Device pointer to the environment property buffer in __device__ memory
      */
     const char *c_buffer;
     /**

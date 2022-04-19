@@ -196,7 +196,7 @@ TEST(RTCNamespaceTest, AgentFunctionsDirective) {
 /* Test by embedding within the flamegpu namespace. (Users shouldn't be doing this, but it is an option.)
 This option requires additional steps for NVRTC to correctly compile things.
 https://docs.nvidia.com/cuda/nvrtc/index.html#accessing-lowered-names
-__global__, __constant__ and __device__ in namespaces need to be expliciltly made available via  nvrtcAddNameExpression
+__global__, __device__ and __device__ in namespaces need to be expliciltly made available via  nvrtcAddNameExpression
 This is a lot of additional complexity to support edge case behaviour, that we do not want to encourage anyway, so disabling this test. */
 
 /* const char* message_out_func_named = R"###(

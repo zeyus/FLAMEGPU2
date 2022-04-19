@@ -15,7 +15,7 @@ namespace detail {
     /**
      * Defined in EnvironmentManager.cu
      */
-    extern __constant__ char c_envPropBuffer[EnvironmentManager::MAX_BUFFER_SIZE];
+    extern __device__ char c_envPropBuffer[EnvironmentManager::MAX_BUFFER_SIZE];
 }  // namespace detail
 #endif
 
