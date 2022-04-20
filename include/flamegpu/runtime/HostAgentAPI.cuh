@@ -748,8 +748,8 @@ void HostAgentAPI::histogramEven_async(const std::string &variable, unsigned int
     gpuErrchk(cub::DeviceHistogram::HistogramEven(api.d_cub_temp, api.d_cub_temp_size,
         reinterpret_cast<InT*>(var_ptr), reinterpret_cast<OutT*>(api.d_output_space), histogramBins + 1, lowerBound, upperBound, static_cast<int>(agentCount), stream));
     gpuErrchkLaunch();
-    std::vector<OutT> rtn(histogramBins);
-    gpuErrchk(cudaMemcpyAsync(rtn.data(), api.d_output_space, histogramBins * sizeof(OutT), cudaMemcpyDeviceToHost, stream));
+    result.resize(histogramBins);
+    gpuErrchk(cudaMemcpyAsync(result.data(), api.d_output_space, histogramBins * sizeof(OutT), cudaMemcpyDeviceToHost, stream));
 }
 template<typename InT, typename reductionOperatorT>
 InT HostAgentAPI::reduce(const std::string &variable, reductionOperatorT reductionOperator, InT init) const {
