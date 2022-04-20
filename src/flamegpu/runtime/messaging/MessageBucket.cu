@@ -51,7 +51,8 @@ __global__ void atomicHistogram1D(
 void MessageBucket::CUDAModelHandler::init(CUDAScatter &, unsigned int, cudaStream_t stream) {
     allocateMetaDataDevicePtr(stream);
     // Set PBM to 0
-    gpuErrchk(cudaMemset(hd_data.PBM, 0x00000000, (bucketCount + 1) * sizeof(unsigned int)));
+    gpuErrchk(cudaMemsetAsync(hd_data.PBM, 0x00000000, (bucketCount + 1) * sizeof(unsigned int), stream));
+    gpuErrchk(cudaStreamSynchronize(stream));
 }
 
 void MessageBucket::CUDAModelHandler::allocateMetaDataDevicePtr(cudaStream_t stream) {
@@ -59,7 +60,8 @@ void MessageBucket::CUDAModelHandler::allocateMetaDataDevicePtr(cudaStream_t str
         gpuErrchk(cudaMalloc(&d_histogram, (bucketCount + 1) * sizeof(unsigned int)));
         gpuErrchk(cudaMalloc(&hd_data.PBM, (bucketCount + 1) * sizeof(unsigned int)));
         gpuErrchk(cudaMalloc(&d_data, sizeof(MetaData)));
-        gpuErrchk(cudaMemcpy(d_data, &hd_data, sizeof(MetaData), cudaMemcpyHostToDevice));
+        gpuErrchk(cudaMemcpyAsync(d_data, &hd_data, sizeof(MetaData), cudaMemcpyHostToDevice, stream));
+        gpuErrchk(cudaStreamSynchronize(stream));
         resizeCubTemp();
     }
 }
@@ -106,7 +108,7 @@ void MessageBucket::CUDAModelHandler::buildIndex(CUDAScatter &scatter, unsigned 
        // Copy messages from d_messages to d_messages_swap, in hash order
         scatter.pbm_reorder(streamId, stream, this->sim_message.getMessageDescription().variables, this->sim_message.getReadList(), this->sim_message.getWriteList(), MESSAGE_COUNT, d_keys, d_vals, hd_data.PBM);
         this->sim_message.swap();
-        gpuErrchk(cudaStreamSynchronize(stream));  // Not striclty neceesary while pbm_reorder is synchronous.
+        gpuErrchk(cudaStreamSynchronize(stream));  // Not strictly necessary while pbm_reorder is synchronous.
     }
     {  // Fill PBM and Message Texture Buffers
        // gpuErrchk(cudaBindTexture(nullptr, d_texMessages, d_agents, sizeof(glm::vec4) * MESSAGE_COUNT));

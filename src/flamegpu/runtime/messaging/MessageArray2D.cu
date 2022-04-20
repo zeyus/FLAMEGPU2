@@ -35,14 +35,16 @@ void MessageArray2D::CUDAModelHandler::init(CUDAScatter &scatter, unsigned int s
     for (auto &var : this->sim_message.getMessageDescription().variables) {
         // Elements is harmless, futureproof for arrays support
         // hd_metadata.length is used, as message array can be longer than message count
-        gpuErrchk(cudaMemset(write_list.at(var.first), 0, var.second.type_size * var.second.elements * hd_metadata.length));
-        gpuErrchk(cudaMemset(read_list.at(var.first), 0, var.second.type_size * var.second.elements * hd_metadata.length));
+        gpuErrchk(cudaMemsetAsync(write_list.at(var.first), 0, var.second.type_size * var.second.elements * hd_metadata.length));
+        gpuErrchk(cudaMemsetAsync(read_list.at(var.first), 0, var.second.type_size * var.second.elements * hd_metadata.length));
     }
+    gpuErrchk(cudaStreamSynchronize(stream));
 }
 void MessageArray2D::CUDAModelHandler::allocateMetaDataDevicePtr(cudaStream_t stream) {
     if (d_metadata == nullptr) {
         gpuErrchk(cudaMalloc(&d_metadata, sizeof(MetaData)));
-        gpuErrchk(cudaMemcpy(d_metadata, &hd_metadata, sizeof(MetaData), cudaMemcpyHostToDevice));
+        gpuErrchk(cudaMemcpyAsync(d_metadata, &hd_metadata, sizeof(MetaData), cudaMemcpyHostToDevice));
+        gpuErrchk(cudaStreamSynchronize(stream));
     }
 }
 
@@ -66,7 +68,7 @@ void MessageArray2D::CUDAModelHandler::buildIndex(CUDAScatter &scatter, unsigned
     for (auto &var : this->sim_message.getMessageDescription().variables) {
         // Elements is harmless, futureproof for arrays support
         // hd_metadata.length is used, as message array can be longer than message count
-        gpuErrchk(cudaMemset(write_list.at(var.first), 0, var.second.type_size * var.second.elements * hd_metadata.length));
+        gpuErrchk(cudaMemsetAsync(write_list.at(var.first), 0, var.second.type_size * var.second.elements * hd_metadata.length, stream));
     }
 
     // Reorder messages
@@ -91,6 +93,7 @@ void MessageArray2D::CUDAModelHandler::buildIndex(CUDAScatter &scatter, unsigned
         this->sim_message.setMessageCount(hd_metadata.length);
     // Detect errors
     // TODO
+    gpuErrchk(cudaStreamSynchronize(stream));  // Redundant: Array msg reorder has a sync
 }
 
 

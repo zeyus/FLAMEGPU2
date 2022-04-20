@@ -68,7 +68,8 @@ void MessageSpatial3D::CUDAModelHandler::allocateMetaDataDevicePtr(cudaStream_t 
         gpuErrchk(cudaMalloc(&d_histogram, (binCount + 1) * sizeof(unsigned int)));
         gpuErrchk(cudaMalloc(&hd_data.PBM, (binCount + 1) * sizeof(unsigned int)));
         gpuErrchk(cudaMalloc(&d_data, sizeof(MetaData)));
-        gpuErrchk(cudaMemcpyAsync(d_data, &hd_data, sizeof(MetaData), cudaMemcpyHostToDevice));
+        gpuErrchk(cudaMemcpyAsync(d_data, &hd_data, sizeof(MetaData), cudaMemcpyHostToDevice, stream));
+        gpuErrchk(cudaStreamSynchronize(stream));
         resizeCubTemp(stream);
     }
 }
