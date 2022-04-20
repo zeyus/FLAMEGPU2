@@ -44,13 +44,14 @@ class MessageBruteForce::CUDAModelHandler : public MessageSpecialisationHandler 
      * Sets data asthough message list is empty
      * @param scatter Scatter instance and scan arrays to be used (CUDASimulation::singletons->scatter)
      * @param streamId The stream index to use for accessing stream specific resources such as scan compaction arrays and buffers
+     * @param stream The CUDAStream to use for CUDA operations
      */
     void init(CUDAScatter &scatter, unsigned int streamId, cudaStream_t stream) override;
     /**
      * Updates the length of the messagelist stored on device
      * @param scatter Scatter instance and scan arrays to be used (CUDASimulation::singletons->scatter)
      * @param streamId The stream index to use for accessing stream specific resources such as scan compaction arrays and buffers
-     * @param stream CUDA stream to be used for async CUDA operations
+     * @param stream The CUDAStream to use for CUDA operations
      */
     void buildIndex(CUDAScatter &scatter, unsigned int streamId, cudaStream_t stream) override;
     /**

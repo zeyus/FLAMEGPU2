@@ -54,6 +54,7 @@ class CUDAMessageList {
      * Resize the internal message list buffers to the length of the parent CUDAMessage
      * Retain keep_len items from d_list during the resize (d_swap_list data is lost)
      * @param scatter Scatter instance and scan arrays to be used (CUDASimulation::singletons->scatter)
+     * @param stream The CUDAStream to use for CUDA operations
      * @param streamId The stream index to use for accessing stream specific resources such as scan compaction arrays and buffers
      * @param keep_len If specified, number of items to retain through the resize
      * @throw If keep_len exceeds the new buffer length
@@ -72,6 +73,7 @@ class CUDAMessageList {
      * Perform a compaction using d_message_scan_flag and d_message_position
      * @param newCount Number of new messages to be scattered
      * @param scatter Scatter instance and scan arrays to be used (CUDASimulation::singletons->scatter)
+     * @param stream The CUDAStream to use for CUDA operations
      * @param streamId The stream index to use for accessing stream specific resources such as scan compaction arrays and buffers
      * @param append If true scattered messages will append to the existing message list, otherwise truncate
      * @return Total number of messages now in list (includes old + new counts if appending)
@@ -83,6 +85,7 @@ class CUDAMessageList {
      * Used by swap() when appending messagelists
      * @param newCount Number of new messages to be scattered
      * @param scatter Scatter instance and scan arrays to be used (CUDASimulation::singletons->scatter)
+     * @param stream The CUDAStream to use for CUDA operations
      * @param streamId The stream index to use for accessing stream specific resources such as scan compaction arrays and buffers
      * @return Total number of messages now in list (includes old + new counts)
      */
@@ -97,22 +100,23 @@ class CUDAMessageList {
     const CUDAMessageMap &getWriteList() { return d_swap_list; }
 
  protected:
-     /**
-      * Allocates device memory for the provided message list
-      * @param memory_map Message list to perform operation on
-      */
-     void allocateDeviceMessageList(CUDAMessageMap &memory_map);
-     /**
-      * Frees device memory for the provided message list
-      * @param memory_map Message list to perform operation on
-      */
-     void releaseDeviceMessageList(CUDAMessageMap &memory_map);
-     /**
-      * Zeros device memory for the provided message list
-      * @param memory_map Message list to perform operation on
-      * @param skip_offset Number of items at the start of the list to not zero
-      */
-     void zeroDeviceMessageList_async(CUDAMessageMap &memory_map, cudaStream_t stream, unsigned int skip_offset = 0);
+    /**
+     * Allocates device memory for the provided message list
+     * @param memory_map Message list to perform operation on
+     */
+    void allocateDeviceMessageList(CUDAMessageMap &memory_map);
+    /**
+     * Frees device memory for the provided message list
+     * @param memory_map Message list to perform operation on
+     */
+    void releaseDeviceMessageList(CUDAMessageMap &memory_map);
+    /**
+     * Zeros device memory for the provided message list
+     * @param memory_map Message list to perform operation on
+     * @param stream The CUDAStream to use for CUDA operations
+     * @param skip_offset Number of items at the start of the list to not zero
+     */
+    void zeroDeviceMessageList_async(CUDAMessageMap &memory_map, cudaStream_t stream, unsigned int skip_offset = 0);
 
  private:
      /**

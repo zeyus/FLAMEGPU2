@@ -101,6 +101,7 @@ class CUDAMacroEnvironment {
      * Initialises submodel mappings too
      * @param mapping The SubEnvironment mapping info
      * @param master_macro_env The master model's macro env to map sub macro properties with
+     * @param stream The CUDAStream to use for CUDA operations
      * @note This must be called after the master model CUDAMacroEnvironment has init
      */
     void init(const SubEnvironmentData& mapping, const CUDAMacroEnvironment& master_macro_env, cudaStream_t stream);

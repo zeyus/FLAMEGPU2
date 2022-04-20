@@ -322,6 +322,8 @@ class HostAgentAPI {
      * @param order Whether the agents should be sorted in ascending or descending order of the variable
      * @param beginBit Advanced Option, see note
      * @param endBit Advanced Option, see note
+     * @param stream The CUDAStream to use for CUDA operations
+     * @param streamId The index of the stream resources to use
      * @tparam VarT The type of the variable as specified in the model description hierarchy
      * @throws exception::UnsupportedVarType Array variables are not supported
      * @throws exception::InvalidAgentVar If the agent does not contain a variable of the same name
