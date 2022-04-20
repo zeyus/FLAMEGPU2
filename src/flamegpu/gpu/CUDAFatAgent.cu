@@ -122,7 +122,7 @@ void CUDAFatAgent::processDeath(const unsigned int &agent_fat_id, const std::str
         scanCfg.d_ptrs.position,
         agent_count + 1,
         stream));
-    gpuErrchk(cudaStreamSynchronize(stream));
+    gpuErrchk(cudaStreamSynchronize(stream));  // Redundant? scatter occurs in same stream
 
     // Scatter
     sm->second->scatterDeath(scatter, streamId, stream);
