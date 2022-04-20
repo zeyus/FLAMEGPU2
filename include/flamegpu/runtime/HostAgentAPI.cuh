@@ -109,6 +109,11 @@ __device__ __forceinline__ OutT funcName ## _impl::unary_function<InT, OutT>::op
  * Mostly provides access to reductions over agent variables
  */
 class HostAgentAPI {
+    /**
+     * Access to async sort method/s by spatialSortAgent_async()
+     */
+    friend class CUDASimulation;
+
  public:
    /**
     * Construct a new HostAgentAPI instance for a specified agent type and state
@@ -700,7 +705,7 @@ void HostAgentAPI::sort_async(const std::string & variable, Order order, int beg
         // If the user has a DeviceAgentVector out, purge cache so it redownloads new data on next use
         population->purgeCache();
     }
-    gpuErrchk(cudaStreamSynchronize(stream)); // Redudannt, bc scatterSort above has sync
+    gpuErrchk(cudaStreamSynchronize(stream));  // Redudannt, bc scatterSort above has sync
 }
 
 

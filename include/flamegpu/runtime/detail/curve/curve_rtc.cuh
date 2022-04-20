@@ -1,11 +1,11 @@
 #ifndef INCLUDE_FLAMEGPU_RUNTIME_DETAIL_CURVE_CURVE_RTC_CUH_
 #define INCLUDE_FLAMEGPU_RUNTIME_DETAIL_CURVE_CURVE_RTC_CUH_
 
+#include <driver_types.h>
 #include <array>
 #include <cstring>
 #include <string>
 #include <cstdio>
-#include <driver_types.h>
 #include <typeindex>
 #include <map>
 

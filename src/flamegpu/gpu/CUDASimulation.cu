@@ -631,6 +631,7 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
         }
         ++streamIdx;
     }
+    // No explicit sync, sorts should be in same stream as eventual kernel launch (digging deep, the underlying scatter method does have a sync though)
     streamIdx = 0;
 
     // Map agent memory
@@ -666,8 +667,8 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
             }
 
             totalThreads += state_list_size;
-            ++streamIdx;
         }
+        ++streamIdx;
     }
 
     // If any condition kernel needs to be executed, do so, by checking the number of threads from before.
