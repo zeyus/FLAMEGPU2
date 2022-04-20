@@ -469,7 +469,11 @@ void CUDASimulation::spatialSortAgent_async(const std::string& funcName, const s
     }
     if (radius > 0.0f) {
         envWidth = {(envMax.x-envMin.x), (envMax.y-envMin.y), (envMax.z-envMin.z)};
-        gridDim = {static_cast<unsigned int>(ceilf(envWidth.x / radius)), static_cast<unsigned int>(ceilf(envWidth.y / radius)), static_cast<unsigned int>(ceilf(envWidth.z / radius))};
+        gridDim = {
+            envWidth.x ? static_cast<unsigned int>(ceilf(envWidth.x / radius)) : 1,
+            envWidth.y ? static_cast<unsigned int>(ceilf(envWidth.y / radius)) : 1,
+            envWidth.z ? static_cast<unsigned int>(ceilf(envWidth.z / radius)) : 1
+        };
     }
 
 
@@ -535,6 +539,7 @@ void CUDASimulation::spatialSortAgent_async(const std::string& funcName, const s
     // Calculate max bit
     const int max_bit = static_cast<int>(ceil(log2(gridDim.x * gridDim.y * gridDim.z)));
     host_api->agent(agentName).sort_async<unsigned int>("_auto_sort_bin_index", HostAgentAPI::Asc, 0, max_bit, stream, streamId);
+    gpuErrchk(cudaStreamSynchronize(stream));
 }
 
 bool CUDASimulation::step() {
