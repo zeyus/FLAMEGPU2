@@ -18,11 +18,16 @@ FLAMEGPU_AGENT_FUNCTION(move, flamegpu::MessageBruteForce, flamegpu::MessageNone
     const float y1 = FLAMEGPU->getVariable<float>("y");
     const float z1 = FLAMEGPU->getVariable<float>("z");
     int count = 0;
-    for (const auto &message : FLAMEGPU->message_in) {
-        if (message.getVariable<flamegpu::id_t>("id") != ID) {
-            const float x2 = message.getVariable<float>("x");
-            const float y2 = message.getVariable<float>("y");
-            const float z2 = message.getVariable<float>("z");
+    // for (const auto &message : FLAMEGPU->message_in) {
+    for(uint32_t midx = 0;  midx < FLAMEGPU->message_in.size(); midx++){
+        if (flamegpu::detail::curve::Curve::getMessageVariable<flamegpu::id_t>("id", FLAMEGPU->message_in.combined_hash, midx) != ID) {
+            
+            const float x2 = flamegpu::detail::curve::Curve::getMessageVariable<float>("x", FLAMEGPU->message_in.combined_hash, midx);
+            const float y2 = flamegpu::detail::curve::Curve::getMessageVariable<float>("y", FLAMEGPU->message_in.combined_hash, midx);
+            const float z2 = flamegpu::detail::curve::Curve::getMessageVariable<float>("z", FLAMEGPU->message_in.combined_hash, midx);
+            // if(ID == 0) {
+                // printf(" %u %f %f %f\n", ID, x2, y2, z2);
+            // }
             float x21 = x2 - x1;
             float y21 = y2 - y1;
             float z21 = z2 - z1;

@@ -164,7 +164,6 @@ class MessageBruteForce::In {
         __device__  Message& operator*() { return _message; }
     };
 
- private:
      /**
       * CURVE hash for accessing message data
       * agent function hash + message hash
