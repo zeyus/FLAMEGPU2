@@ -392,7 +392,7 @@ void CUDAAgent::mapNewRuntimeVariables_async(const CUDAAgent& func_agent, const 
         // We need a 3rd array, because a function might combine agent birth, agent death and message output
         scatter.Scan().resize(maxLen, CUDAScanCompaction::AGENT_OUTPUT, streamId);
         // Ensure the scan flag is zeroed
-        scatter.Scan().zero(CUDAScanCompaction::AGENT_OUTPUT, streamId);
+        scatter.Scan().zero_async(CUDAScanCompaction::AGENT_OUTPUT, stream, streamId);
 
         // Request a buffer for new
         char *d_new_buffer = static_cast<char*>(fat_agent->allocNewBuffer(TOTAL_AGENT_VARIABLE_SIZE, maxLen, agent_description.variables.size()));
