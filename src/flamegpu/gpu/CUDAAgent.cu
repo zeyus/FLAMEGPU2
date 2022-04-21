@@ -407,7 +407,7 @@ void CUDAAgent::mapNewRuntimeVariables_async(const CUDAAgent& func_agent, const 
         }
 
         // Init the buffer to default values for variables
-        scatter.broadcastInit(
+        scatter.broadcastInit_async(
             streamId,
             stream,
             agent_description.variables,

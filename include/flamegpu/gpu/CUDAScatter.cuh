@@ -244,19 +244,32 @@ class CUDAScatter {
      * @param itemCount Total number of items in input array to consider
      * @param out_index_offset The offset to be applied to the ouput index (e.g. if out already contains data)
      */
-    void broadcastInit(
-        const unsigned int &streamResourceId,
-        const cudaStream_t &stream,
+    void broadcastInit_async(
+        unsigned int streamResourceId,
+        cudaStream_t stream,
         const std::list<std::shared_ptr<VariableBuffer>> &vars,
-        const unsigned int &itemCount,
-        const unsigned int out_index_offset);
+        unsigned int itemCount,
+        unsigned int out_index_offset);
     void broadcastInit(
-        const unsigned int &streamResourceId,
-        const cudaStream_t &stream,
+        unsigned int streamResourceId,
+        cudaStream_t stream,
+        const std::list<std::shared_ptr<VariableBuffer>>& vars,
+        unsigned int itemCount,
+        unsigned int out_index_offset);
+    void broadcastInit_async(
+        unsigned int streamResourceId,
+        cudaStream_t stream,
+        const VariableMap& vars,
+        void* const d_newBuff,
+        unsigned int itemCount,
+        unsigned int out_index_offset);
+    void broadcastInit(
+        unsigned int streamResourceId,
+        cudaStream_t stream,
         const VariableMap &vars,
         void * const d_newBuff,
-        const unsigned int &itemCount,
-        const unsigned int out_index_offset);
+        unsigned int itemCount,
+        unsigned int out_index_offset);
     /**
      * Used to reorder array messages based on __INDEX variable, that variable is not sorted
      * Also throws exception if any indexes are repeated
