@@ -443,7 +443,7 @@ void CUDASimulation::spatialSortAgent_async(const std::string& funcName, const s
     if (auto ptr = funcData->message_input.lock()) {
         messageName = ptr->name;
     } else {
-        throw("Function " + funcName + " registered for auto-spatial sorting but input message type not found!\n");
+        THROW exception::InvalidAgentFunc("Function %s registered for auto-spatial sorting but input message type not found!\n", funcName.c_str());
     }
     MessageBruteForce::Data* msgData = model->messages.at(messageName).get();
 
@@ -539,7 +539,6 @@ void CUDASimulation::spatialSortAgent_async(const std::string& funcName, const s
     // Calculate max bit
     const int max_bit = static_cast<int>(ceil(log2(gridDim.x * gridDim.y * gridDim.z)));
     host_api->agent(agentName).sort_async<unsigned int>("_auto_sort_bin_index", HostAgentAPI::Asc, 0, max_bit, stream, streamId);
-    gpuErrchk(cudaStreamSynchronize(stream));
 }
 
 bool CUDASimulation::step() {

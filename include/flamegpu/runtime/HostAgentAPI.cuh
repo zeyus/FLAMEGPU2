@@ -305,7 +305,7 @@ class HostAgentAPI {
      * @param length Length of the buffer (how many unsigned ints can it hold)
      * @param stream CUDA stream to be used for async CUDA operations
      */
-    static void fillTIDArray(unsigned int *d_buffer, unsigned int length, cudaStream_t stream);
+    static void fillTIDArray_async(unsigned int *d_buffer, unsigned int length, cudaStream_t stream);
     /**
      * Sorts a buffer by the positions array, used for multi variable agent sorts
      * @param dest Device pointer to buffer for sorted data to be placed
@@ -860,7 +860,7 @@ void HostAgentAPI::sort_async(const std::string & variable, Order order, int beg
     unsigned int *vals_in = scan.Config(CUDAScanCompaction::Type::MESSAGE_OUTPUT, streamId).d_ptrs.scan_flag;
     unsigned int *vals_out = scan.Config(CUDAScanCompaction::Type::MESSAGE_OUTPUT, streamId).d_ptrs.position;
     // Create array of TID (use scanflag_death.position)
-    fillTIDArray(vals_in, agentCount, stream);
+    fillTIDArray_async(vals_in, agentCount, stream);
     // Create array of agent values (use scanflag_death.scan_flag)
     gpuErrchk(cudaMemcpyAsync(keys_in, var_ptr, total_variable_buffer_size, cudaMemcpyDeviceToDevice, stream));
     // Check if we need to resize cub storage
@@ -882,7 +882,7 @@ void HostAgentAPI::sort_async(const std::string & variable, Order order, int beg
         gpuErrchk(cub::DeviceRadixSort::SortPairsDescending(api.d_cub_temp, api.d_cub_temp_size, keys_in, keys_out, vals_in, vals_out, agentCount, beginBit, endBit, stream));
     }
     // Scatter all agent variables
-    api.agentModel.agent_map.at(agentDesc.name)->scatterSort(stateName, scatter, streamId, stream);  // @todo THIS IS NOT ASYNC!
+    api.agentModel.agent_map.at(agentDesc.name)->scatterSort_async(stateName, scatter, streamId, stream);
     if (population) {
         // If the user has a DeviceAgentVector out, purge cache so it redownloads new data on next use
         population->purgeCache();
@@ -956,7 +956,7 @@ void HostAgentAPI::sort_async(const std::string & variable1, Order order1, const
     Var2T *keys2 = reinterpret_cast<Var2T *>(scan.Config(CUDAScanCompaction::Type::MESSAGE_OUTPUT, streamId).d_ptrs.scan_flag);
     unsigned int *vals = scan.Config(CUDAScanCompaction::Type::MESSAGE_OUTPUT, streamId).d_ptrs.position;
     // Init value array
-    fillTIDArray(vals, agentCount, stream);
+    fillTIDArray_async(vals, agentCount, stream);
     // Process variable 2 first
     {
         // pair sort values
@@ -984,7 +984,7 @@ void HostAgentAPI::sort_async(const std::string & variable1, Order order1, const
         gpuErrchkLaunch();
     }
     // Scatter all agent variables
-    api.agentModel.agent_map.at(agentDesc.name)->scatterSort(stateName, scatter, streamId, stream);
+    api.agentModel.agent_map.at(agentDesc.name)->scatterSort_async(stateName, scatter, streamId, stream);
 
     if (population) {
         // If the user has a DeviceAgentVector out, purge cache so it redownloads new data on next use

@@ -139,12 +139,18 @@ class CUDAScatter {
      * @param scatterData Vector of scatter configuration for each variable to be scattered
      * @param itemCount Total number of items in input array to consider
      */
+    void scatterPosition_async(
+        unsigned int streamResourceId,
+        cudaStream_t stream,
+        Type messageOrAgent,
+        const std::vector<ScatterData>& scatterData,
+        unsigned int itemCount);
     void scatterPosition(
-        const unsigned int &streamResourceId,
-        const cudaStream_t &stream,
-        const Type &messageOrAgent,
+        unsigned int streamResourceId,
+        cudaStream_t stream,
+        Type messageOrAgent,
         const std::vector<ScatterData> &scatterData,
-        const unsigned int &itemCount);
+        unsigned int itemCount);
     /**
      * Returns the final CUDAScanCompaction::position item 
      * Same value as scatter, - scatter_a__count

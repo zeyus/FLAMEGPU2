@@ -368,14 +368,14 @@ void CUDAAgent::scatterHostCreation(const std::string &state_name, const unsigne
     }
     sm->second->scatterHostCreation(newSize, d_inBuff, offsets, scatter, streamId, stream);
 }
-void CUDAAgent::scatterSort(const std::string &state_name, CUDAScatter &scatter, const unsigned int &streamId, const cudaStream_t &stream) {
+void CUDAAgent::scatterSort_async(const std::string &state_name, CUDAScatter &scatter, unsigned int streamId, cudaStream_t stream) {
     auto sm = state_map.find(state_name);
     if (sm == state_map.end()) {
         THROW exception::InvalidCudaAgentState("Error: Agent ('%s') state ('%s') was not found "
             "in CUDAAgent::scatterHostCreation()",
             agent_description.name.c_str(), state_name.c_str());
     }
-    sm->second->scatterSort(scatter, streamId, stream);
+    sm->second->scatterSort_async(scatter, streamId, stream);
 }
 void CUDAAgent::mapNewRuntimeVariables_async(const CUDAAgent& func_agent, const AgentFunctionData& func, unsigned int maxLen, CUDAScatter &scatter, unsigned int instance_id, cudaStream_t stream, unsigned int streamId) {
     // Confirm agent output is set

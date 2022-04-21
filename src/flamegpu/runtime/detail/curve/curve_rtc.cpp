@@ -1048,7 +1048,7 @@ void CurveRTCHost::updateDevice_async(const jitify::experimental::KernelInstanti
     // The namespace is required here, but not in other uses of getVariableSymbolName.
     std::string cache_var_name = std::string("flamegpu::detail::curve::") + getVariableSymbolName();
     CUdeviceptr d_var_ptr = instance.get_global_ptr(cache_var_name.c_str());
-    gpuErrchkDriverAPI(cuMemcpyHtoDAsync(d_var_ptr, h_data_buffer, data_buffer_size, stream));  // Not pinned
+    gpuErrchkDriverAPI(cuMemcpyHtoDAsync(d_var_ptr, h_data_buffer, data_buffer_size, stream));
 }
 
 }  // namespace curve

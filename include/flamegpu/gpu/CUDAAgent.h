@@ -169,7 +169,7 @@ class CUDAAgent : public AgentInterface {
      * @param stream CUDA stream to be used for async CUDA operations
      * @see HostAgentAPI::sort(const std::string &, HostAgentAPI::Order, int, int)
      */
-    void scatterSort(const std::string &state_name, CUDAScatter &scatter, const unsigned int &streamId, const cudaStream_t &stream);
+    void scatterSort_async(const std::string &state_name, CUDAScatter &scatter, unsigned int streamId, cudaStream_t stream);
     /**
      * Allocates a buffer for storing new agents into and
      * uses the cuRVE runtime to map variables for use with an agent function that has device agent birth
