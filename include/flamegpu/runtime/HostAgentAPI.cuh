@@ -374,7 +374,6 @@ class HostAgentAPI {
      * Wraps thrust::count(), to count the number of occurences of the provided value
      * @param variable The agent variable to perform the count reduction across
      * @param value The value to count occurrences of
-     * @param result Variable which will store the result (note method is async, result may not arrive until stream is synchronised)
      * @param stream The CUDAStream to use for CUDA operations
      * @tparam InT The type of the variable as specified in the model description hierarchy
      * @throws exception::UnsupportedVarType Array variables are not supported

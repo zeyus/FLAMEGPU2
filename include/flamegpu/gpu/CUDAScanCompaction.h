@@ -1,5 +1,6 @@
 #ifndef INCLUDE_FLAMEGPU_GPU_CUDASCANCOMPACTION_H_
 #define INCLUDE_FLAMEGPU_GPU_CUDASCANCOMPACTION_H_
+#include <driver_types.h>
 
 namespace flamegpu {
 
@@ -75,7 +76,7 @@ struct CUDAScanCompactionConfig {
     /**
      * Reset all data inside the two scan buffers to 0
      */
-    void zero_scan_flag();
+    void zero_scan_flag_async(cudaStream_t stream);
 };
 
 /**
@@ -129,7 +130,7 @@ class CUDAScanCompaction {
      * @param type The type of the scan flag buffer to be zerod
      * @param streamId The stream index of the scan flag buffer to be zerod
      */
-    void zero(const Type& type, const unsigned int& streamId);
+    void zero_async(const Type& type, cudaStream_t stream, unsigned int streamId);
     /**
      * Returns a const reference to the scan flag config structure for the specified stream and type
      * @param type The type of the scan flag buffer to return

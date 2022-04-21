@@ -658,7 +658,8 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
             cuda_agent.mapRuntimeVariables(*func_des, instance_id);
 
             // Zero the scan flag that will be written to
-            singletons->scatter.Scan().zero(CUDAScanCompaction::AGENT_DEATH, streamIdx);  // @todo - stream
+            singletons->scatter.Scan().zero_async(CUDAScanCompaction::AGENT_DEATH, getStream(streamIdx), streamIdx);
+            // No sync, this occurs in same stream as dependent kernel launch
 
             // Push function's RTC cache to device if using RTC
             if (!func_des->rtc_func_condition_name.empty()) {
@@ -861,7 +862,8 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
             singletons->scatter.Scan().resize(state_list_size, CUDAScanCompaction::MESSAGE_OUTPUT, streamIdx);
             // Zero the scan flag that will be written to
             if (func_des->message_output_optional)
-                singletons->scatter.Scan().zero(CUDAScanCompaction::MESSAGE_OUTPUT, streamIdx);  // @todo - do this in a stream?
+                singletons->scatter.Scan().zero_async(CUDAScanCompaction::MESSAGE_OUTPUT, getStream(streamIdx), streamIdx);
+                // No Sync, any subsequent use should be in same stream
         }
 
         // check if a function has an output agent
@@ -879,7 +881,8 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
 
         // Zero the scan flag that will be written to
         if (func_des->has_agent_death) {
-            singletons->scatter.Scan().CUDAScanCompaction::zero(CUDAScanCompaction::AGENT_DEATH, streamIdx);  // @todo stream?
+            singletons->scatter.Scan().zero_async(CUDAScanCompaction::AGENT_DEATH, getStream(streamIdx), streamIdx);
+            // No Sync, any subsequent use should be in same stream
         }
 
         // Push function's RTC cache to device if using RTC
