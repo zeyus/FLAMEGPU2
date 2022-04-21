@@ -377,7 +377,7 @@ void CUDAAgent::scatterSort(const std::string &state_name, CUDAScatter &scatter,
     }
     sm->second->scatterSort(scatter, streamId, stream);
 }
-void CUDAAgent::mapNewRuntimeVariables(const CUDAAgent& func_agent, const AgentFunctionData& func, const unsigned int &maxLen, CUDAScatter &scatter, const unsigned int &instance_id, const unsigned int &streamId) {
+void CUDAAgent::mapNewRuntimeVariables_async(const CUDAAgent& func_agent, const AgentFunctionData& func, unsigned int maxLen, CUDAScatter &scatter, unsigned int instance_id, cudaStream_t stream, unsigned int streamId) {
     // Confirm agent output is set
     if (auto oa = func.agent_output.lock()) {
         // check the cuda agent state map to find the correct state list for functions starting state
@@ -409,10 +409,11 @@ void CUDAAgent::mapNewRuntimeVariables(const CUDAAgent& func_agent, const AgentF
         // Init the buffer to default values for variables
         scatter.broadcastInit(
             streamId,
-            0,
+            stream,
             agent_description.variables,
             d_new_buffer,
             maxLen, 0);
+        // No sync, use of the buffer should be in the same stream
 
         // Map variables to curve
         const detail::curve::Curve::VariableHash _agent_birth_hash = detail::curve::Curve::variableRuntimeHash("_agent_birth");

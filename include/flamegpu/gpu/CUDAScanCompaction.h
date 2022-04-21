@@ -75,6 +75,8 @@ struct CUDAScanCompactionConfig {
     void resize_scan_flag(const unsigned int& count);
     /**
      * Reset all data inside the two scan buffers to 0
+     * @param stream The CUDA stream used to execute the memset
+     * @note This method is async, the cuda stream is not synchronised
      */
     void zero_scan_flag_async(cudaStream_t stream);
 };
@@ -128,7 +130,9 @@ class CUDAScanCompaction {
     /**
      * Reset all scan flags in the buffer for the specified stream and type to zero
      * @param type The type of the scan flag buffer to be zerod
+     * @param stream The CUDA stream used to execute the memset
      * @param streamId The stream index of the scan flag buffer to be zerod
+     * @note This method is async, the cuda stream is not synchronised
      */
     void zero_async(const Type& type, cudaStream_t stream, unsigned int streamId);
     /**

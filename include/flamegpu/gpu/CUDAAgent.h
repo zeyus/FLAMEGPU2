@@ -178,9 +178,11 @@ class CUDAAgent : public AgentInterface {
      * @param maxLen The maximum number of new agents (this will be the size of the agent state executing func)
      * @param scatter Scatter instance and scan arrays to be used (CUDASimulation::singletons->scatter)
      * @param instance_id The CUDASimulation instance_id of the parent instance. This is added to the hash, to differentiate instances
+     * @param stream The CUDA stream used to execute the initialisation of the new agent databuffers
      * @param streamId The stream index to use for accessing stream specific resources such as scan compaction arrays and buffers
+     * @note This method is async, the stream used it not synchronised
      */
-    void mapNewRuntimeVariables(const CUDAAgent& func_agent, const AgentFunctionData& func, const unsigned int &maxLen, CUDAScatter &scatter, const unsigned int &instance_id, const unsigned int &streamId);
+    void mapNewRuntimeVariables_async(const CUDAAgent& func_agent, const AgentFunctionData& func, unsigned int maxLen, CUDAScatter &scatter, unsigned int instance_id, cudaStream_t stream, unsigned int streamId);
     /**
      * Uses the cuRVE runtime to unmap the variables used by agent birth and
      * releases the buffer that was storing the data

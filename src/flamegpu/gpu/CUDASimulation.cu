@@ -873,7 +873,8 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
             CUDAAgent& output_agent = getCUDAAgent(oa->name);
 
             // Map vars with curve (this allocates/requests enough new buffer space if an existing version is not available/suitable)
-            output_agent.mapNewRuntimeVariables(cuda_agent, *func_des, state_list_size, this->singletons->scatter, instance_id, streamIdx);  // @todo - stream?
+            output_agent.mapNewRuntimeVariables_async(cuda_agent, *func_des, state_list_size, this->singletons->scatter, instance_id, getStream(streamIdx), streamIdx);
+            // No Sync, any subsequent use should be in same stream
         }
 
         // Configure runtime access of the functions variables within the FLAME_API object
@@ -900,7 +901,7 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
         ++streamIdx;
     }
 
-    // If any condition kernel needs to be executed, do so, by checking the number of threads from before.
+    // If any kernel needs to be executed, do so, by checking the number of threads from before.
     if (totalThreads > 0) {
         std::shared_lock<std::shared_timed_mutex> env_shared_lock;
         std::shared_lock<std::shared_timed_mutex> env_device_lock;
