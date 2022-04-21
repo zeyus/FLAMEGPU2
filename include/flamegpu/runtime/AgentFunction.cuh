@@ -20,16 +20,8 @@ typedef void(AgentFunctionWrapper)(
     detail::curve::Curve::NamespaceHash instance_id_hash,
     detail::curve::Curve::NamespaceHash agent_func_name_hash,
     detail::curve::Curve::NamespaceHash messagename_inp_hash,
-    detail::curve::Curve::NamespaceHash messagename_outp_hash,
-    detail::curve::Curve::NamespaceHash agent_output_hash,
-    id_t *d_agent_output_nextID,
     const unsigned int popNo,
-    const void *in_messagelist_metadata,
-    const void *out_messagelist_metadata,
-    curandState *d_rng,
-    unsigned int *scanFlag_agentDeath,
-    unsigned int *scanFlag_messageOutput,
-    unsigned int *scanFlag_agentOutput);  // Can't put __global__ in a typedef
+    const void *in_messagelist_metadata);  // Can't put __global__ in a typedef
 
 /**
  * Wrapper function for launching agent functions
@@ -52,7 +44,7 @@ typedef void(AgentFunctionWrapper)(
  * @tparam MessageIn Message handler for input messages (e.g. MessageNone, MessageBruteForce, MessageSpatial3D)
  * @tparam MessageOut Message handler for output messages (e.g. MessageNone, MessageBruteForce, MessageSpatial3D)
  */
-template<typename AgentFunction, typename MessageIn, typename MessageOut>
+template<typename AgentFunction, typename MessageIn>
 __global__ void agent_function_wrapper(
 #if !defined(SEATBELTS) || SEATBELTS
     exception::DeviceExceptionBuffer *error_buffer,
@@ -60,16 +52,8 @@ __global__ void agent_function_wrapper(
     detail::curve::Curve::NamespaceHash instance_id_hash,
     detail::curve::Curve::NamespaceHash agent_func_name_hash,
     detail::curve::Curve::NamespaceHash messagename_inp_hash,
-    detail::curve::Curve::NamespaceHash messagename_outp_hash,
-    detail::curve::Curve::NamespaceHash agent_output_hash,
-    id_t *d_agent_output_nextID,
     const unsigned int popNo,
-    const void *in_messagelist_metadata,
-    const void *out_messagelist_metadata,
-    curandState *d_rng,
-    unsigned int *scanFlag_agentDeath,
-    unsigned int *scanFlag_messageOutput,
-    unsigned int *scanFlag_agentOutput) {
+    const void *in_messagelist_metadata) {
 #if !defined(SEATBELTS) || SEATBELTS
     // We place this at the start of shared memory, so we can locate it anywhere in device code without a reference
     extern __shared__ exception::DeviceExceptionBuffer *buff[];
@@ -83,29 +67,24 @@ __global__ void agent_function_wrapper(
     #endif  // __CUDACC__
 #endif
     // Must be terminated here, else AgentRandom has bounds issues inside DeviceAPI constructor
-    if (DeviceAPI<MessageIn, MessageOut>::getThreadIndex() >= popNo)
+    if (DeviceAPI<MessageIn>::getThreadIndex() >= popNo)
         return;
     // create a new device FLAME_GPU instance
-    DeviceAPI<MessageIn, MessageOut> api = DeviceAPI<MessageIn, MessageOut>(
+    DeviceAPI<MessageIn> api = DeviceAPI<MessageIn>(
         instance_id_hash,
         agent_func_name_hash,
-        agent_output_hash,
-        d_agent_output_nextID,
-        d_rng,
-        scanFlag_agentOutput,
-        MessageIn::In(agent_func_name_hash, messagename_inp_hash, in_messagelist_metadata),
-        MessageOut::Out(agent_func_name_hash, messagename_outp_hash, out_messagelist_metadata, scanFlag_messageOutput));
+        MessageIn::In(agent_func_name_hash, messagename_inp_hash, in_messagelist_metadata));
 
     // call the user specified device function
     AGENT_STATUS flag = AgentFunction()(&api);
-    if (scanFlag_agentDeath) {
+/*     if (scanFlag_agentDeath) {
         // (scan flags will not be processed unless agent death has been requested in model definition)
         scanFlag_agentDeath[DeviceAPI<MessageIn, MessageOut>::getThreadIndex()] = flag;
 #if !defined(SEATBELTS) || SEATBELTS
     } else if (flag == DEAD) {
         DTHROW("Agent death must be enabled per agent function when defining the model.\n");
 #endif
-    }
+    } */
 }
 
 }  // namespace flamegpu

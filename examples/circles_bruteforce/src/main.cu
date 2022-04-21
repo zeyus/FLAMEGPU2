@@ -1,16 +1,16 @@
 #include "flamegpu/flamegpu.h"
 
-FLAMEGPU_AGENT_FUNCTION(output_message, flamegpu::MessageNone, flamegpu::MessageBruteForce) {
+/* FLAMEGPU_AGENT_FUNCTION(output_message, flamegpu::MessageNone, flamegpu::MessageBruteForce) {
     FLAMEGPU->message_out.setVariable<flamegpu::id_t>("id", FLAMEGPU->getID());
     FLAMEGPU->message_out.setVariable<float>("x", FLAMEGPU->getVariable<float>("x"));
     FLAMEGPU->message_out.setVariable<float>("y", FLAMEGPU->getVariable<float>("y"));
     FLAMEGPU->message_out.setVariable<float>("z", FLAMEGPU->getVariable<float>("z"));
     return flamegpu::ALIVE;
-}
+} */
 FLAMEGPU_AGENT_FUNCTION(move, flamegpu::MessageBruteForce, flamegpu::MessageNone) {
     const flamegpu::id_t ID = FLAMEGPU->getID();
-    const float REPULSE_FACTOR = FLAMEGPU->environment.getProperty<float>("repulse");
-    const float RADIUS = FLAMEGPU->environment.getProperty<float>("radius");
+    const float REPULSE_FACTOR = 0.05f;  // FLAMEGPU->environment.getProperty<float>("repulse");
+    const float RADIUS = 2.0f;  // FLAMEGPU->environment.getProperty<float>("radius");
     float fx = 0.0;
     float fy = 0.0;
     float fz = 0.0;
@@ -89,7 +89,7 @@ int main(int argc, const char ** argv) {
         agent.newVariable<float>("y");
         agent.newVariable<float>("z");
         agent.newVariable<float>("drift");  // Store the distance moved here, for validation
-        agent.newFunction("output_message", output_message).setMessageOutput("location");
+        //agent.newFunction("output_message", output_message).setMessageOutput("location");
         agent.newFunction("move", move).setMessageInput("location");
     }
 
@@ -112,7 +112,7 @@ int main(int argc, const char ** argv) {
 
     {   // Layer #1
         flamegpu::LayerDescription  &layer = model.newLayer();
-        layer.addAgentFunction(output_message);
+        //layer.addAgentFunction(output_message);
     }
     {   // Layer #2
         flamegpu::LayerDescription  &layer = model.newLayer();

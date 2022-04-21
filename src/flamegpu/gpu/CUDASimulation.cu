@@ -989,19 +989,11 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
                     instance_id,
                     agent_func_name_hash,
                     message_name_inp_hash,
-                    message_name_outp_hash,
-                    agentoutput_hash,
-                    d_agentOut_nextID,
                     state_list_size,
-                    d_in_messagelist_metadata,
-                    d_out_messagelist_metadata,
-                    t_rng,
-                    scanFlag_agentDeath,
-                    scanFlag_messageOutput,
-                    scanFlag_agentOutput);
+                    d_in_messagelist_metadata);
                 gpuErrchkLaunch();
             } else {      // assume this is a runtime specified agent function
-                // get instantiation
+/*                 // get instantiation
                 const jitify::experimental::KernelInstantiation& instance = cuda_agent.getRTCInstantiation(func_name);
                 // calculate the grid block size for main agent function
                 CUfunction cu_func = (CUfunction)instance;
@@ -1031,7 +1023,7 @@ void CUDASimulation::stepLayer(const std::shared_ptr<LayerData>& layer, const un
                     cuGetErrorString(a, &err_str);
                     THROW exception::InvalidAgentFunc("There was a problem launching the runtime agent function '%s': %s", func_name.c_str(), err_str);
                 }
-                gpuErrchkLaunch();
+                gpuErrchkLaunch(); */
             }
             totalThreads += state_list_size;
             ++streamIdx;
