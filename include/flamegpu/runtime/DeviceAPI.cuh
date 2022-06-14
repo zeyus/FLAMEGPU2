@@ -47,14 +47,14 @@ class ReadOnlyDeviceAPI {
         const detail::curve::CurveTable *,
 #endif
         const unsigned int,
-        curandState *,
+        curandStatePhilox4_32_10_t *,
         unsigned int *);
 
  public:
     /**
      * @param d_rng Pointer to the device random state buffer to be used
      */
-    __device__ ReadOnlyDeviceAPI(curandState *&d_rng)
+    __device__ ReadOnlyDeviceAPI(curandStatePhilox4_32_10_t *&d_rng)
         : random(AgentRandom(&d_rng[getThreadIndex()]))
         , environment(DeviceEnvironment()) { }
     /**
@@ -154,7 +154,7 @@ class DeviceAPI {
         const unsigned int,
         const void *,
         const void *,
-        curandState *,
+        curandStatePhilox4_32_10_t *,
         unsigned int *,
         unsigned int *,
         unsigned int *);
@@ -238,7 +238,7 @@ class DeviceAPI {
      */
     __device__ DeviceAPI(
         id_t *&d_agent_output_nextID,
-        curandState *&d_rng,
+        curandStatePhilox4_32_10_t *&d_rng,
         unsigned int *&scanFlag_agentOutput,
         typename MessageIn::In &&message_in,
         typename MessageOut::Out &&message_out)
