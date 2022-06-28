@@ -8,7 +8,6 @@ namespace flamegpu {
  * @todo
  */
 class EnvironmentDirectedGraph::Device {
-
 };
 }  // namespace flamegpu
 

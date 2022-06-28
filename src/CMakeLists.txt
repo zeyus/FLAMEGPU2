@@ -265,6 +265,9 @@ SET(SRC_FLAMEGPU
     ${FLAMEGPU_ROOT}/src/flamegpu/runtime/detail/curve/HostCurve.cu
     ${FLAMEGPU_ROOT}/src/flamegpu/runtime/HostAPI.cu
     ${FLAMEGPU_ROOT}/src/flamegpu/runtime/HostAgentAPI.cu 
+    ${FLAMEGPU_ROOT}/src/flamegpu/runtime/environment/EnvironmentDirectedGraph/EnvironmentDirectedGraphData.cu
+    ${FLAMEGPU_ROOT}/src/flamegpu/runtime/environment/EnvironmentDirectedGraph/EnvironmentDirectedGraphDescription.cu
+    ${FLAMEGPU_ROOT}/src/flamegpu/runtime/environment/EnvironmentDirectedGraph/EnvironmentDirectedGraphHost.cu
     ${FLAMEGPU_ROOT}/src/flamegpu/runtime/messaging/MessageBruteForce.cu
     ${FLAMEGPU_ROOT}/src/flamegpu/runtime/messaging/MessageSpatial2D.cu
     ${FLAMEGPU_ROOT}/src/flamegpu/runtime/messaging/MessageSpatial3D.cu

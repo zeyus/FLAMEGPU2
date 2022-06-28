@@ -2,6 +2,7 @@
 #define INCLUDE_FLAMEGPU_RUNTIME_ENVIRONMENT_ENVIRONMENTDIRECTEDGRAPH_ENVIRONMENTDIRECTEDGRAPHDATA_CUH_
 
 #include <string>
+#include <memory>
 
 #include "flamegpu/runtime/environment/EnvironmentDirectedGraph.cuh"
 #include "flamegpu/model/Variable.h"
@@ -12,16 +13,15 @@ namespace flamegpu {
  * This is the internal data store for EnvironmentDirectedGraph::Description
  * Users should only access that data stored within via an instance of EnvironmentDirectedGraph::Description
  */
-struct EnvironmentDirectedGraph::Data : std::enable_shared_from_this<EnvironmentDirectedGraph::Data> {
-
+struct EnvironmentDirectedGraph::Data : std::enable_shared_from_this<Data> {
     /**
      * Holds all of the graphs's vertex property definitions
      */
-    VariableMap vertexProperties;
+    VariableMap vertexProperties{};
     /**
      * Holds all of the graphs's edge property definitions
      */
-    VariableMap edgeProperties;
+    VariableMap edgeProperties{};
     /**
      * Description class which provides convenient accessors
      * This may be null if the instance has been cloned
@@ -60,17 +60,16 @@ struct EnvironmentDirectedGraph::Data : std::enable_shared_from_this<Environment
     /**
      * Copy constructor
      * This is unsafe, should only be used internally, use clone() instead
-     * This does not setup functions map
-     * @param model New parent model (we do not copy the other AgentData's parent model)
-     * @param other Other AgentData to copy data from
+     * @param model New parent model (we do not copy the other EnvironmentDirectedGraph::Data's parent model)
+     * @param other Other EnvironmentDirectedGraph::Data to copy data from
      */
     Data(std::shared_ptr<const ModelData> model, const Data& other);
     /**
      * Normal constructor, only to be called by ModelDescription
      * @param model Parent model
-     * @param agent_name Name of the agent
+     * @param graph_name Name of the graph
      */
-    Data(std::shared_ptr<const ModelData> model, const std::string& agent_name);
+    Data(std::shared_ptr<const ModelData> model, const std::string& graph_name);
 };
 }  // namespace flamegpu
 

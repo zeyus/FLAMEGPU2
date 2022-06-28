@@ -415,6 +415,10 @@ DERIVED_FLAMEGPUException(AgentIDCollision, "Multiple agents of same type share 
  * Defines an error when runs fail during an ensemble's execution
  */
 DERIVED_FLAMEGPUException(EnsembleError, "One of more runs failed during the ensemble's execution");
+/**
+ * Defines an error when an invalid property for a graph is specified
+ */
+DERIVED_FLAMEGPUException(InvalidGraphProperty, "Invalid graph property specified");
 
 }  // namespace exception
 }  // namespace flamegpu
