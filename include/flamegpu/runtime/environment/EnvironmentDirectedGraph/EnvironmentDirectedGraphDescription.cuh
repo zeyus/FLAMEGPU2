@@ -18,17 +18,12 @@ class EnvironmentDirectedGraph::Description {
       * Data store class for this description, constructs instances of this class
       */
     friend struct Data;
-    /**
-     * Only way to construct an graphDescription
-     */
-    friend EnvironmentDirectedGraph::Description& EnvironmentDescription::newDirectedGraph(const std::string&);
 
     /**
      * Constructor, this should only be called by EnvironmentDirectedGraph::Data
-     * @param _model Model at root of model hierarchy
      * @param data Data store of this graph's data
      */
-    Description(std::shared_ptr<const ModelData> _model, EnvironmentDirectedGraph::Data* const data);
+    explicit Description(Data* const data);
     /**
      * Default copy constructor, not implemented
      */
@@ -192,10 +187,6 @@ class EnvironmentDirectedGraph::Description {
     bool hasEdgeProperty(const std::string& property_name) const;
 
  private:
-    /**
-     * Root of the model hierarchy
-     */
-    std::weak_ptr<const ModelData> model;
     /**
      * The class which stores all of the graph's data.
      */

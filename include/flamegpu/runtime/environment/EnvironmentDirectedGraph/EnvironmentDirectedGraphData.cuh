@@ -15,6 +15,12 @@ namespace flamegpu {
  */
 struct EnvironmentDirectedGraph::Data : std::enable_shared_from_this<Data> {
     /**
+     * Only way to construct an graphDescription
+     */
+    friend Description& EnvironmentDescription::newDirectedGraph(const std::string&);
+    friend EnvironmentDescription::EnvironmentDescription(const EnvironmentDescription&);
+    friend EnvironmentDescription& EnvironmentDescription::operator=(const EnvironmentDescription&);
+    /**
      * Holds all of the graphs's vertex property definitions
      */
     VariableMap vertexProperties{};
@@ -26,7 +32,7 @@ struct EnvironmentDirectedGraph::Data : std::enable_shared_from_this<Data> {
      * Description class which provides convenient accessors
      * This may be null if the instance has been cloned
      */
-    std::shared_ptr<EnvironmentDirectedGraph::Description> description;
+    std::shared_ptr<Description> description;
     /**
      * Name of the graph, used to refer to the graph in many functions
      */
@@ -46,10 +52,6 @@ struct EnvironmentDirectedGraph::Data : std::enable_shared_from_this<Data> {
      */
     bool operator!=(const Data& rhs) const;
     /**
-     * Default copy constructor, not implemented
-     */
-    Data(const Data& other) = delete;
-    /**
      * Returns a constant copy of this agent's hierarchy
      * Does not copy description, sets it to nullptr instead
      * @return A shared ptr to a copy
@@ -60,16 +62,14 @@ struct EnvironmentDirectedGraph::Data : std::enable_shared_from_this<Data> {
     /**
      * Copy constructor
      * This is unsafe, should only be used internally, use clone() instead
-     * @param model New parent model (we do not copy the other EnvironmentDirectedGraph::Data's parent model)
      * @param other Other EnvironmentDirectedGraph::Data to copy data from
      */
-    Data(std::shared_ptr<const ModelData> model, const Data& other);
+    explicit Data(const Data& other);
     /**
      * Normal constructor, only to be called by ModelDescription
-     * @param model Parent model
      * @param graph_name Name of the graph
      */
-    Data(std::shared_ptr<const ModelData> model, const std::string& graph_name);
+    explicit Data(const std::string& graph_name);
 };
 }  // namespace flamegpu
 

@@ -3,18 +3,18 @@
 
 namespace flamegpu {
 
-EnvironmentDirectedGraph::Data::Data(std::shared_ptr<const ModelData> model, const std::string& agent_name)
-    : description(new Description(model, this))
+EnvironmentDirectedGraph::Data::Data(const std::string& agent_name)
+    : description(new Description(this))
     , name(agent_name) {
     // Not currently any default properties
 }
-EnvironmentDirectedGraph::Data::Data(std::shared_ptr<const ModelData> model, const Data& other)
+EnvironmentDirectedGraph::Data::Data(const Data& other)
     : vertexProperties(other.vertexProperties)
     , edgeProperties(other.edgeProperties)
-    , description(model ? new Description(model, this) : nullptr)
+    , description(new Description(this))
     , name(other.name) { }
 std::shared_ptr<const EnvironmentDirectedGraph::Data> EnvironmentDirectedGraph::Data::clone() const {
-    return std::shared_ptr<Data>(new Data(nullptr, *this));
+    return std::shared_ptr<Data>(new Data(*this));
 }
 bool EnvironmentDirectedGraph::Data::operator==(const Data& rhs) const {
     if (name == rhs.name

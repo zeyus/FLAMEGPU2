@@ -8,12 +8,14 @@
 #include <array>
 #include <vector>
 #include <utility>
+#include <memory>
 
 #include "flamegpu/exception/FLAMEGPUException.h"
 #include "flamegpu/runtime/utility/HostEnvironment.cuh"
 #include "flamegpu/util/Any.h"
 #include "flamegpu/util/type_decode.h"
 #include "flamegpu/gpu/CUDAEnsemble.h"
+#include "flamegpu/runtime/environment/EnvironmentDirectedGraph.cuh"
 
 namespace flamegpu {
 
@@ -118,6 +120,8 @@ class EnvironmentDescription {
      * Default destruction
      */
     EnvironmentDescription();
+    EnvironmentDescription(const EnvironmentDescription& other);
+    EnvironmentDescription& operator=(const EnvironmentDescription& other);
 
     bool operator==(const EnvironmentDescription& rhs) const;
     bool operator!=(const EnvironmentDescription& rhs) const;
@@ -186,6 +190,14 @@ class EnvironmentDescription {
     template<typename T>
     void newMacroProperty_swig(const std::string& name, EnvironmentManager::size_type I = 1, EnvironmentManager::size_type J = 1, EnvironmentManager::size_type K = 1, EnvironmentManager::size_type W = 1);
 #endif
+    /**
+     * Define a new directed graph
+     *
+     * Directed graphs are environmental graph structures which can hold properties on their vertices and edges
+     * Agent's can traverse the graph structure and assign messages to the graph using related communication strategies
+     * @param graph_name The name used to refer to the graph throughout the model
+     */
+    EnvironmentDirectedGraph::Description& EnvironmentDescription::newDirectedGraph(const std::string &graph_name);
     /**
      * Gets an environment property
      * @param name name used for accessing the property
@@ -299,6 +311,10 @@ class EnvironmentDescription {
      * Main storage of all macroproperties
      */
     std::unordered_map<std::string, MacroPropData> macro_properties{};
+    /**
+     * Main storage of all directed graphs
+     */
+    std::unordered_map<std::string, std::shared_ptr<EnvironmentDirectedGraph::Data>> directed_graphs{};
 };
 
 

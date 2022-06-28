@@ -419,6 +419,10 @@ DERIVED_FLAMEGPUException(EnsembleError, "One of more runs failed during the ens
  * Defines an error when an invalid property for a graph is specified
  */
 DERIVED_FLAMEGPUException(InvalidGraphProperty, "Invalid graph property specified");
+/**
+ * Defines an error when an invalid name for a graph is specified
+ */
+DERIVED_FLAMEGPUException(InvalidGraphName, "Invalid graph name specified");
 
 }  // namespace exception
 }  // namespace flamegpu
