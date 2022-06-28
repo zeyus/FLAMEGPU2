@@ -160,6 +160,11 @@ SET(SRC_INCLUDE
     ${FLAMEGPU_ROOT}/include/flamegpu/runtime/detail/curve/DeviceCurve.cuh
     ${FLAMEGPU_ROOT}/include/flamegpu/runtime/detail/curve/HostCurve.cuh
     ${FLAMEGPU_ROOT}/include/flamegpu/runtime/detail/curve/curve_rtc.cuh
+    ${FLAMEGPU_ROOT}/include/flamegpu/runtime/environment/EnvironmentDirectedGraph.cuh
+    ${FLAMEGPU_ROOT}/include/flamegpu/runtime/environment/EnvironmentDirectedGraph/EnvironmentDirectedGraphData.cuh
+    ${FLAMEGPU_ROOT}/include/flamegpu/runtime/environment/EnvironmentDirectedGraph/EnvironmentDirectedGraphDescription.cuh
+    ${FLAMEGPU_ROOT}/include/flamegpu/runtime/environment/EnvironmentDirectedGraph/EnvironmentDirectedGraphDevice.cuh
+    ${FLAMEGPU_ROOT}/include/flamegpu/runtime/environment/EnvironmentDirectedGraph/EnvironmentDirectedGraphHost.cuh
     ${FLAMEGPU_ROOT}/include/flamegpu/runtime/messaging.h
     ${FLAMEGPU_ROOT}/include/flamegpu/runtime/messaging_device.h
     ${FLAMEGPU_ROOT}/include/flamegpu/runtime/messaging/MessageSpecialisationHandler.h
