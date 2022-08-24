@@ -95,6 +95,7 @@ cmake_dependent_option(BUILD_SWIG_PYTHON_VENV "Enable the use of a venv for swig
 # Add option to embed the cuda version in the python local version, for pseudo downstream releases / to differentiate wheel files.
 cmake_dependent_option(BUILD_SWIG_PYTHON_LOCALVERSION "Embed CUDA version for the build in the local information" ON "BUILD_SWIG_PYTHON" ON)
 
+option(BUILD_SWIG_R "Enable R bindings via SWIG" OFF)
 
 # Option to enable/disable tests.
 option(BUILD_TESTS "Enable building tests" OFF)
@@ -184,6 +185,10 @@ endif()
 
 if(BUILD_SWIG_PYTHON)
     add_subdirectory(swig)
+endif()
+
+if(BUILD_SWIG_R)
+    add_subdirectory(swigR)
 endif()
 
 # Put all_lint within Lint filter
