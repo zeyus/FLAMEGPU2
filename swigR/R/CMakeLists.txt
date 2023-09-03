@@ -19,11 +19,11 @@ include(${FLAMEGPU_ROOT}/cmake/version.cmake)
 SET(R_DISTRIBUTION_NAME r4.2.0)
 SET(R_LIBRARY_NAME rflamegpu)
 
-SET(R_LIB_OUTPUT_DIR ${CMAKE_BINARY_DIR}/lib/$<CONFIG>/python)
+SET(R_LIB_OUTPUT_DIR ${CMAKE_BINARY_DIR}/lib/$<CONFIG>/R)
 SET(R_LIB_OUTPUT_DIR_BYPRODUCTS TRUE)
 if(${CMAKE_VERSION} VERSION_LESS "3.20")
   if(NOT ${GENERATOR_IS_MULTI_CONFIG})
-    SET(R_LIB_OUTPUT_DIR ${CMAKE_BINARY_DIR}/lib/${CMAKE_BUILD_TYPE}/python)
+    SET(R_LIB_OUTPUT_DIR ${CMAKE_BINARY_DIR}/lib/${CMAKE_BUILD_TYPE}/R)
   else()
     SET(R_LIB_OUTPUT_DIR_BYPRODUCTS FALSE)
   endif()
@@ -54,7 +54,7 @@ SET(SWIG_INPUT_FILE_NAME flamegpu)
 # setup properties of swig input file
 set_property(SOURCE ${SWIG_INPUT_FILE_NAME}.i PROPERTY CPLUSPLUS ON)
 set_property(SOURCE ${SWIG_INPUT_FILE_NAME}.i PROPERTY SWIG_MODULE_NAME ${R_MODULE_NAME})
-set_property(SOURCE ${SWIG_INPUT_FILE_NAME}.i PROPERTY SWIG_FLAGS "-threads")
+
 #set_property(SOURCE ${SWIG_INPUT_FILE_NAME}.i PROPERTY SWIG_FLAGS "-builtin")
 
 # Add swig module
@@ -154,7 +154,7 @@ endforeach()
 set(FLAMEGPU_R_PACKAGE_DATA_OS_SPECIFIC "")
 if(WIN32)
   # @todo - See if there is a dynamic way to achieve this through target properties?  
-  set(FLAMEGPU_R_PACKAGE_DATA_OS_SPECIFIC "${FLAMEGPU_PYTHON_PACKAGE_DATA_OS_SPECIFIC}'glew32.dll', 'SDL2.dll', 'DevIL.dll'")
+  set(FLAMEGPU_R_PACKAGE_DATA_OS_SPECIFIC "${FLAMEGPU_R_PACKAGE_DATA_OS_SPECIFIC}'glew32.dll', 'SDL2.dll', 'DevIL.dll'")
 endif()
 # configure the python setup.py and __init__.py files for packaging and output to the final lib output folder
 # configure_file(

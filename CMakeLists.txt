@@ -9,7 +9,7 @@ get_filename_component(FLAMEGPU_ROOT ${CMAKE_CURRENT_SOURCE_DIR} REALPATH)
 # Ensure this is not an in-source build
 include(${FLAMEGPU_ROOT}/cmake/OutOfSourceOnly.cmake)
 
-# Don't create installation scripts (and hide CMAKE_INSTALL_PREFIX from cmake-gui)
+# Don't create installation scripts (and hide CMAKE_INSTALL_PREFIX from cmake-gui)¨
 set(CMAKE_SKIP_INSTALL_RULES TRUE)
 set(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}" CACHE INTERNAL ""  FORCE)
 

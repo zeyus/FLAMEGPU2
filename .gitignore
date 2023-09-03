@@ -34,7 +34,7 @@ build*/
 .layout
 
 # CUDA
-*.i
+
 *.ii
 *.gpu
 *.ptx

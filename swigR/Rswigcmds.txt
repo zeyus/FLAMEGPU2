@@ -1,0 +1,6 @@
+swig -c++ -I"C:/Users/webma/Documents/github_projects/FLAMEGPU2-visualiser/include" -I"C:/ProgramData/chocolatey/lib/swig/tools/install/swigwin-4.0.2/Lib/std" -I"C:/ProgramData/chocolatey/lib/swig/tools/install/swigwin-4.0.2/Lib/r" -I"C:/Users/webma/Documents/github_projects/FLAMEGPU2/include" -r -DSEATBELTS=1 -DVISUALISATION -DNOMINMAX .\flamegpu.i
+
+-I"C:/Users/webma/Documents/github_projects/FLAMEGPU2-visualiser/include"
+
+&"C:\Program Files\R\R-4.2.0\bin\x64\Rcmd.exe" SHLIB -I"C:/Users/webma/Documents/github_projects/FLAMEGPU2-visualiser/include" -I"C:/Users/webma/Documents/github_projects/FLAMEGPU2/include" flamegpu_wrap.cpp
+

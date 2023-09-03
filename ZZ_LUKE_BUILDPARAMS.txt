@@ -1,0 +1,53 @@
+
+FOR R TESTING: 
+mkdir build
+
+cd build
+
+cmake .. -A x64 -G "Visual Studio 17 2022" -DNO_EXAMPLES=ON -DCUDA_ARCH=61 -DBUILD_SWIG_R=ON -B . -DBUILD_TESTS=OFF -DCMAKE_TOOLCHAIN_FILE="C:/Users/webma/Documents/github_projects/vcpkg/scripts/buildsystems/vcpkg.cmake" -DBUILD_SWIG_PYTHON_VENV=OFF -DUSE_GLM=OFF -DVISUALISATION=ON -DCMAKE_STATIC_LINKER_FLAGS_RELEASE="/NODEFAULTLIB:library" -DCMAKE_SHARED_LINKER_FLAGS_RELEASE="/INCREMENTAL:NO /NODEFAULTLIB:library" -DCMAKE_MODULE_LINKER_FLAGS_RELEASE="/INCREMENTAL:NO /NODEFAULTLIB:library" -DVCPKG_TARGET_TRIPLET="x64-windows" -DVCPKG_HOST_TRIPLET="x64-windows" -DVCPKG_TARGET_ARCHITECTURE="x64" -DSEATBELTS=ON -DBUILD_SWIG_PYTHON=OFF -DPNG_PNG_INCLUDE_DIR="C:/Users/webma/Documents/github_projects/vcpkg/installed/x64-windows/include" -DPNG_LIBRARY="C:/Users/webma/Documents/github_projects/vcpkg/installed/x64-windows/lib/libpng16.lib" -DBUILD_ALL_EXAMPLES=OFF
+cmake --build . --config Release --target rflamegpu --verbose -j 8
+
+
+
+
+From conda env, with VIZ, with SEATBELTS=OFF
+
+mkdir build
+
+cd build
+
+cmake .. -A x64 -G "Visual Studio 17 2022" -DCUDA_ARCH=61 -DBUILD_SWIG_PYTHON=ON -B . -DBUILD_TESTS=OFF -DCMAKE_TOOLCHAIN_FILE="C:/Users/webma/Documents/github_projects/vcpkg/scripts/buildsystems/vcpkg.cmake" -DBUILD_SWIG_PYTHON_VENV=ON -DUSE_GLM=ON -DVISUALISATION=ON -DCMAKE_STATIC_LINKER_FLAGS_RELEASE="/NODEFAULTLIB:library" -DCMAKE_SHARED_LINKER_FLAGS_RELEASE="/INCREMENTAL:NO /NODEFAULTLIB:library" -DCMAKE_MODULE_LINKER_FLAGS_RELEASE="/INCREMENTAL:NO /NODEFAULTLIB:library" -DVCPKG_TARGET_TRIPLET="x64-windows" -DVCPKG_HOST_TRIPLET="x64-windows" -DVCPKG_TARGET_ARCHITECTURE="x64" -DSEATBELTS=OFF -DPython3_ROOT_DIR=C:/tools/miniconda3/envs/socult/ -DPNG_PNG_INCLUDE_DIR="C:/Users/webma/Documents/github_projects/vcpkg/installed/x64-windows/include" -DPNG_LIBRARY="C:/Users/webma/Documents/github_projects/vcpkg/installed/x64-windows/lib/libpng16.lib"
+
+cmake --build . --config Release --target pyflamegpu --verbose -j 8
+
+
+
+
+
+
+
+cmake .. -A x64 -G "Visual Studio 17 2022" -DCUDA_ARCH=61 -DBUILD_SWIG_PYTHON=ON -B . -DBUILD_TESTS=OFF -DCMAKE_TOOLCHAIN_FILE="C:/Users/webma/Documents/github_projects/vcpkg/scripts/buildsystems/vcpkg.cmake" -DBUILD_SWIG_PYTHON_VENV=ON -DUSE_GLM=ON -DVISUALISATION=ON -DCMAKE_MODULE_LINKER_FLAGS_RELEASE="/INCREMENTAL:NO /NODEFAULTLIB:library" -DVCPKG_TARGET_TRIPLET="x64-windows" -DVCPKG_HOST_TRIPLET="x64-windows" -DVCPKG_TARGET_ARCHITECTURE="x64" -DSEATBELTS=OFF -DPython3_ROOT_DIR=C:/tools/miniconda3/envs/socult/ -DPNG_PNG_INCLUDE_DIR="C:/Users/webma/Documents/github_projects/vcpkg/installed/x64-windows/include"
+
+-DPython3_ROOT_DIR=C:/tools/miniconda3/envs/socult/ -DPython3_EXECUTABLE=C:/tools/miniconda3/envs/socult/python.exe -DPython3_INCLUDE_DIR=C:/tools/miniconda3/envs/socult/include 
+
+
+
+
+
+
+
+
+OLD:
+
+cmake .. -A x64 -G "Visual Studio 17 2022" -DCUDA_ARCH=61 -DBUILD_SWIG_PYTHON=ON -B . -DPython3_ROOT_DIR=C:/tools/miniconda3/envs/socult/ -DPython3_EXECUTABLE=C:/tools/miniconda3/envs/socult/python.exe -DBUILD_TESTS=OFF -DCMAKE_TOOLCHAIN_FILE="C:/Users/webma/Documents/github_projects/vcpkg/scripts/buildsystems/vcpkg.cmake" -DBUILD_SWIG_PYTHON_VENV=OFF -DUSE_GLM=ON
+
+
+ -DPNG_PNG_INCLUDE_DIR="C:/tools/miniconda3/envs/socult/Library/include" 
+
+
+
+cmake .. -A x64 -G "Visual Studio 17 2022" -DCUDA_ARCH=61 -DBUILD_SWIG_PYTHON=ON -B . -DPython3_ROOT_DIR=C:/tools/miniconda3/envs/socult/ -DPython3_EXECUTABLE=C:/tools/miniconda3/envs/socult/python.exe -DBUILD_TESTS=OFF -DCMAKE_TOOLCHAIN_FILE="C:/Users/webma/Documents/github_projects/vcpkg/scripts/buildsystems/vcpkg.cmake" -DBUILD_SWIG_PYTHON_VENV=ON -DUSE_GLM=ON -DCMAKE_MODULE_LINKER_FLAGS_RELEASE="/INCREMENTAL:NO /NODEFAULTLIB:library" -DVCPKG_TARGET_TRIPLET="x64-windows" -DVCPKG_HOST_TRIPLET="x64-windows" -DVCPKG_TARGET_ARCHITECTURE="x64" -DSEATBELTS=OFF
+
+
+
+ "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.32.31326\bin\HostX64\x64\link.exe" /ERRORREPORT:QUEUE /OUT:"C:\Users\webma\Documents\github_projects\FLAMEGPU2\build\swig\python\Release\_pyflamegpu.pyd" /INCREMENTAL:NO /NOLOGO /LIBPATH:"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\lib\x64" /LIBPATH:"C:\Users\webma\Documents\github_projects\vcpkg\installed\x64-windows\lib" /LIBPATH:"C:\Users\webma\Documents\github_projects\vcpkg\installed\x64-windows\lib\manual-link" ..\..\lib\Release\flamegpu.lib C:\tools\miniconda3\envs\socult\libs\python310.lib ..\..\lib\Release\flamegpu_visualiser.lib legacy_stdio_definitions.lib "..\..\_deps\sdl2-src\lib\x64\SDL2.lib" "..\..\_deps\sdl2-src\lib\x64\SDL2main.lib" "..\..\_deps\glew-src\lib\Release\x64\glew32.lib" ..\..\lib\Release\freetype.lib C:\tools\miniconda3\envs\socult\Library\lib\bzip2.lib "..\..\_deps\devil-src\lib\x64\Release\DevIL.lib" opengl32.lib dwrite.lib ..\..\lib\Release\resources.lib ..\..\lib\Release\tinyxml2.lib "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\lib\x64\nvrtc.lib" "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\lib\x64\cuda.lib" cudadevrt.lib cudart_static.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib "C:\Users\webma\Documents\github_projects\vcpkg\installed\x64-windows\lib\*.lib" /NODEFAULTLIB:library /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:"C:/Users/webma/Documents/github_projects/FLAMEGPU2/build/swig/python/Release/_pyflamegpu.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/webma/Documents/github_projects/FLAMEGPU2/build/swig/python/Release/pyflamegpu.lib" /MACHINE:X64 /NODEFAULTLIB:library /machine:x64 /DLL pyflamegpu.dir\Release\flamegpuPYTHON_wrap.obj

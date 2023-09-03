@@ -149,10 +149,10 @@ set(CMAKE_SWIG_FLAGS)
 #include(${SWIG_USE_FILE})
 include(UseSWIG)
 
-# enable doxygen translation
-if (SWIG_VERSION VERSION_GREATER_EQUAL 4)
-	list(APPEND CMAKE_SWIG_FLAGS "-doxygen")
-endif()
+# # enable doxygen translation
+# if (SWIG_VERSION VERSION_GREATER_EQUAL 4)
+# 	list(APPEND CMAKE_SWIG_FLAGS "-doxygen")
+# endif()
 
 list(APPEND CMAKE_SWIG_FLAGS "-r")
 
